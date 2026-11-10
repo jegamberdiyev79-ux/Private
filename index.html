@@ -1,450 +1,227 @@
-<!DOCTYPE html>
-<html lang="uz">
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudyBuddy — Pro SaaS Architecture</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-base: #0B0E14;
-            --bg-surface: #121824;
-            --bg-surface-hover: #182030;
-            --border-subtle: rgba(255, 255, 255, 0.06);
-            --border-active: rgba(139, 92, 246, 0.4);
-            --accent-primary: #8B5CF6;
-            --accent-glow: rgba(139, 92, 246, 0.15);
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
-            --text-dim: #64748B;
-            --success: #22C55E;
-            --warning: #F59E0B;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-
-        .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; padding: 24px 16px; z-index: 10; }
-        .logo-area { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 32px; }
-        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #8B5CF6, #6D28D9); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--accent-glow); }
-        .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: #FFF; }
-        
-        .nav-section { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; padding: 0 12px; margin-bottom: 8px; }
-        
-        .nav-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 11px 14px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 10px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 6px;
-            text-align: left;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .nav-btn:hover {
-            background: var(--bg-surface-hover);
-            color: var(--text-main);
-            border-color: rgba(255, 255, 255, 0.04);
-            transform: translateX(2px);
-        }
-        .nav-btn.active {
-            background: var(--accent-glow);
-            color: var(--accent-primary);
-            border-color: var(--border-active);
-            font-weight: 600;
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
-        }
-
-        .sidebar-footer { margin-top: auto; background: rgba(255, 255, 255, 0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle); }
-        .user-level { font-size: 13px; font-weight: 600; color: #FFF; display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .xp-bar { background: rgba(255, 255, 255, 0.05); height: 6px; border-radius: 3px; overflow: hidden; }
-        .xp-fill { background: var(--accent-primary); height: 100%; width: 78%; border-radius: 3px; }
-
-        .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.03), transparent 40%); }
-        
-        .header { height: 70px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: rgba(11, 14, 20, 0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 5; }
-        .search-trigger { background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 8px 16px; border-radius: 8px; width: 340px; color: var(--text-dim); font-size: 13px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.2s; }
-        .search-trigger:hover { border-color: var(--border-active); color: var(--text-muted); }
-        .kbd { background: rgba(255, 255, 255, 0.06); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-
-        .user-profile { display: flex; align-items: center; gap: 12px; font-size: 13px; }
-        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
-
-        .content { padding: 32px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
-        
-        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px; transition: 0.2s; position: relative; overflow: hidden; }
-        .card:hover { border-color: rgba(255, 255, 255, 0.12); }
-
-        .view-panel { display: none; width: 100%; grid-column: span 12; grid-template-columns: repeat(12, 1fr); gap: 20px; }
-        .view-panel.active { display: grid; }
-
-        .kpi-card { grid-column: span 3; }
-        .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .kpi-title { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
-        .kpi-value { font-size: 28px; font-weight: 700; color: #FFF; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
-        .kpi-sub { font-size: 13px; color: var(--text-muted); font-weight: 400; }
-        
-        .progress-container { margin-top: 14px; }
-        .progress-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--text-muted); }
-        .progress-bar { background: rgba(255, 255, 255, 0.05); height: 6px; border-radius: 3px; overflow: hidden; }
-        .progress-fill { background: linear-gradient(90deg, #8B5CF6, #A78BFA); height: 100%; border-radius: 3px; }
-
-        .timer-section { grid-column: span 8; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .section-title { font-size: 15px; font-weight: 600; color: #FFF; letter-spacing: -0.2px; }
-        
-        .habit-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
-        .habit-row:hover { background: var(--bg-surface-hover); border-color: var(--border-active); transform: translateY(-1px); }
-        .habit-name { font-size: 14px; font-weight: 600; color: #FFF; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .habit-time { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-        
-        .btn-action { background: var(--accent-primary); color: #FFF; border: none; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
-        .btn-action:hover { background: #7C3AED; transform: translateY(-1px); }
-        .badge-done { color: var(--success); font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.1); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.2); }
-
-        .analytics-card { grid-column: span 4; display: flex; flex-direction: column; justify-content: space-between; }
-        .insight-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
-        .highlight-box { background: rgba(139, 92, 246, 0.05); padding: 14px; border-radius: 10px; border: 1px solid var(--border-active); font-size: 12px; line-height: 1.5; color: #E2E8F0; }
-        .highlight-box b { color: var(--accent-primary); }
-
-        .task-detail-container { grid-column: span 12; display: none; background: var(--bg-surface); border: 1px solid var(--border-active); border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); }
-        .task-detail-container.active { display: block; }
-        
-        .back-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px; transition: 0.2s; }
-        .back-btn:hover { background: var(--bg-surface-hover); color: #FFF; border-color: var(--border-active); }
-
-        .timer-display-box { background: rgba(11, 14, 20, 0.6); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 32px; text-align: center; margin-bottom: 24px; position: relative; overflow: hidden; }
-        .timer-digits { font-size: 56px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #FFF; letter-spacing: -2px; margin: 16px 0; text-shadow: 0 0 30px var(--accent-glow); }
-        
-        .timer-controls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
-        .btn-timer-ctrl { padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
-        .btn-start-t { background: var(--success); color: #000; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3); }
-        .btn-pause-t { background: var(--warning); color: #000; }
-        .btn-reset-t { background: rgba(255, 255, 255, 0.08); color: #FFF; border: 1px solid var(--border-subtle); }
-        .btn-timer-ctrl:hover { transform: translateY(-1px); opacity: 0.9; }
-
-        .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
-        .tool-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 18px; }
-        .tool-title { font-size: 13px; font-weight: 600; color: #FFF; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .tool-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
-
-        /* IELTS Stats Custom Styling */
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; grid-column: span 12; }
-        .stat-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; }
-        .stat-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
-        .stat-value-big { font-size: 24px; font-weight: 700; color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; }
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyBuddy — Personal Performance OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090b12;--panel:#111522;--panel2:#151b2b;--line:#252c3d;--muted:#8992a8;--text:#f3f5fb;--purple:#9b8cff;--cyan:#65d8e8;--green:#62d6a3;--orange:#ffb86b;--red:#ff7587;--shadow:0 18px 55px #0005}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#30275a55,transparent 34%),var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}.sidebar{width:252px;position:fixed;inset:0 auto 0 0;background:#0d101aee;border-right:1px solid var(--line);padding:25px 16px;display:flex;flex-direction:column;z-index:10;backdrop-filter:blur(20px)}
+.brand{display:flex;align-items:center;gap:12px;padding:2px 10px 30px}.brand-mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(140deg,#b3a4ff,#6c59d9);display:grid;place-items:center;color:#111;font-size:20px;box-shadow:0 8px 30px #8c78ff55}.brand strong{font:700 17px 'Space Grotesk';letter-spacing:-.5px}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1.7px;margin-top:2px}
+.nav-label{font-size:10px;letter-spacing:1.7px;color:#667087;font-weight:700;padding:13px 12px 9px}.nav{display:grid;gap:5px}.nav button{border:1px solid transparent;background:transparent;color:#929bb0;text-align:left;padding:11px 13px;border-radius:11px;display:flex;align-items:center;gap:12px;font-size:13px;transition:.2s}.nav button:hover{background:#ffffff08;color:white}.nav button.active{background:linear-gradient(100deg,#9b8cff24,#9b8cff08);border-color:#9b8cff42;color:#c4baff}.nav .ico{width:19px;text-align:center;font-size:16px}
+.side-bottom{margin-top:auto}.level-card{padding:15px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#1b2032,#111522)}.level-top{display:flex;justify-content:space-between;font-size:12px}.level-top b{color:var(--purple)}.xp-track,.track{height:6px;background:#ffffff12;border-radius:20px;overflow:hidden}.xp-track{margin:11px 0 7px}.xp-track i,.track i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:20px}.side-note{font-size:10px;color:#707a91}
+.main{margin-left:252px;width:calc(100% - 252px);min-width:0}.topbar{height:76px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;position:sticky;top:0;background:#090b12d9;backdrop-filter:blur(18px);z-index:5}.crumb{color:var(--muted);font-size:12px}.crumb b{color:#fff;font-weight:600}.top-actions{display:flex;align-items:center;gap:12px}.date-chip,.icon-btn{border:1px solid var(--line);background:#121725;color:#aeb6c8;border-radius:10px;padding:9px 12px;font-size:11px}.avatar{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#b6a8ff,#57d2df);display:grid;place-items:center;color:#111;font-weight:800;font-size:12px}
+.content{max-width:1500px;margin:auto;padding:30px 34px 55px}.page{display:none;animation:fade .3s ease}.page.active{display:block}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;gap:15px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--purple);font-weight:700;text-transform:uppercase;margin-bottom:9px}.page h1{font:700 clamp(25px,3vw,34px) 'Space Grotesk';letter-spacing:-1.2px;margin:0}.sub{color:var(--muted);font-size:12px;margin-top:7px}.btn{border:1px solid transparent;border-radius:10px;padding:10px 15px;font-size:12px;font-weight:700;transition:.2s}.btn-primary{background:linear-gradient(120deg,#a99aff,#8170ec);color:#100f1a;box-shadow:0 7px 22px #8d7cff30}.btn-primary:hover{transform:translateY(-2px);filter:brightness(1.08)}.btn-ghost{background:#ffffff08;border-color:var(--line);color:#c6ccda}.btn-danger{background:#ff75871a;border-color:#ff758744;color:#ff9eaa}.btn-sm{padding:7px 10px;font-size:11px}
+.grid{display:grid;gap:16px}.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:17px}.card{background:linear-gradient(145deg,#151a29,#101421);border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 8px 30px #0001;min-width:0}.stat{position:relative;overflow:hidden}.stat:after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;background:var(--glow,#9b8cff);filter:blur(50px);opacity:.14;right:-20px;top:-30px}.stat-label{color:var(--muted);font-size:11px;display:flex;justify-content:space-between;align-items:center}.stat-value{font:700 28px 'Space Grotesk';margin:12px 0 5px;letter-spacing:-1px}.stat-foot{font-size:10px;color:#8c96aa}.positive{color:var(--green)}.purple{color:var(--purple)}.cyan{color:var(--cyan)}.orange{color:var(--orange)}
+.two-col{grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr)}.three-col{grid-template-columns:repeat(3,minmax(0,1fr))}.section-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}.section-title{font:600 15px 'Space Grotesk'}.section-meta{font-size:10px;color:var(--muted)}.goal-hero{background:linear-gradient(115deg,#211d3d,#171a2d 62%,#10242e);border-color:#554a8d66;display:grid;grid-template-columns:1fr auto;align-items:center;gap:20px;margin-bottom:17px;position:relative;overflow:hidden}.goal-hero:before{content:"";position:absolute;width:280px;height:280px;border-radius:50%;border:1px solid #a89aff18;right:90px;top:-160px;box-shadow:0 0 0 30px #a89aff08,0 0 0 60px #a89aff05}.goal-name{font:700 21px 'Space Grotesk';margin:4px 0 8px}.goal-desc{font-size:11px;color:#a8afc2}.goal-progress{max-width:600px;margin-top:20px}.goal-progress .track{height:9px}.goal-progress .track i{background:linear-gradient(90deg,#8d7aff,#5fd6df)}.goal-percent{text-align:right;font:700 35px 'Space Grotesk';color:#c5baff}.goal-ring{width:108px;height:108px;border-radius:50%;background:conic-gradient(var(--purple) 0 68%,#ffffff14 68% 100%);display:grid;place-items:center;position:relative}.goal-ring:before{content:"";position:absolute;inset:8px;background:#1b1b35;border-radius:50%}.goal-ring span{position:relative;font:700 22px 'Space Grotesk'}
+.chart-wrap{height:220px;position:relative}.chart-wrap canvas{width:100%;height:100%}.chart-legend{display:flex;gap:15px;color:var(--muted);font-size:10px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--purple)}
+.habit-list{display:grid;gap:9px}.habit-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #ffffff0c;background:#ffffff04;border-radius:12px;transition:.2s;cursor:pointer}.habit-item:hover{border-color:#9b8cff66;background:#9b8cff0a;transform:translateY(-1px)}.habit-icon{width:38px;height:38px;border-radius:12px;background:#9b8cff17;display:grid;place-items:center;font-size:18px}.habit-info{flex:1;min-width:0}.habit-info b{font-size:12px;display:block}.habit-info small{font-size:10px;color:var(--muted)}.habit-time{font:600 11px 'Space Grotesk';color:#bdc4d4}.check{width:27px;height:27px;border:1px solid #ffffff25;border-radius:9px;background:transparent;color:transparent}.check.done{background:#62d6a322;border-color:#62d6a366;color:var(--green)}
+.activity{display:grid;gap:13px}.activity-row{display:flex;gap:10px;align-items:flex-start}.activity-icon{width:28px;height:28px;border-radius:9px;background:#ffffff0a;display:grid;place-items:center;font-size:13px}.activity-row b{font-size:11px;display:block}.activity-row small{font-size:10px;color:var(--muted)}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.quick{border:1px solid var(--line);background:#ffffff05;border-radius:12px;padding:13px;text-align:left;color:var(--text)}.quick:hover{border-color:#9b8cff66}.quick span{font-size:17px;display:block;margin-bottom:8px}.quick b{font-size:11px}.quick small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.table{width:100%;border-collapse:collapse;font-size:11px}.table th{text-align:left;color:#79839a;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:10px;border-bottom:1px solid var(--line)}.table td{padding:12px 10px;border-bottom:1px solid #ffffff0a;color:#c7cddd}.table tr:last-child td{border:0}.pill{padding:4px 8px;border-radius:20px;font-size:9px;background:#ffffff0c;color:#aab3c6}.pill.green{background:#62d6a318;color:var(--green)}.pill.amber{background:#ffb86b18;color:var(--orange)}.pill.red{background:#ff758718;color:var(--red)}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:grid;gap:6px}.field label{font-size:10px;color:#9ca6bb;font-weight:600}.field input,.field select,.field textarea,.inline-input{width:100%;background:#0c101b;border:1px solid #30384b;color:#edf0f8;padding:10px 11px;border-radius:9px;outline:none;font-size:12px}.field input:focus,.field select:focus,.field textarea:focus{border-color:#9b8cff;box-shadow:0 0 0 3px #9b8cff18}.field textarea{min-height:75px;resize:vertical}.field input::placeholder,.field textarea::placeholder{color:#586176}.field.full{grid-column:1/-1}.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.skill-card{display:flex;align-items:center;gap:12px}.skill-icon{font-size:20px}.skill-main{flex:1}.skill-main b{font-size:12px}.skill-main small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.skill-band{font:700 20px 'Space Grotesk';color:var(--purple)}.mini-track{height:5px;background:#ffffff12;border-radius:9px;margin-top:10px}.mini-track i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:9px}
+.habit-page-grid{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr)}.habit-manage{display:grid;gap:10px}.manage-row{display:flex;align-items:center;gap:10px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff04}.manage-row .habit-info{flex:1}.timer-face{font:700 clamp(42px,7vw,68px) 'Space Grotesk';letter-spacing:-3px;text-align:center;margin:22px 0;color:#eeeaff}.timer-circle{width:220px;height:220px;border-radius:50%;margin:15px auto;background:conic-gradient(var(--purple) 0deg,#ffffff10 0deg);display:grid;place-items:center;position:relative}.timer-circle:before{content:"";position:absolute;inset:9px;border-radius:50%;background:#111624}.timer-circle .timer-face{position:relative;margin:0;font-size:42px}.timer-controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.timer-task-title{text-align:center;font:600 18px 'Space Grotesk'}.timer-sub{text-align:center;color:var(--muted);font-size:11px;margin-top:5px}
+.score-input{display:flex;align-items:center;gap:8px}.score-input input{max-width:95px}.score-input span{font-size:10px;color:var(--muted)}
+.goal-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px}.goal-row b{font-size:12px}.goal-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.reward{border:1px solid var(--line);border-radius:13px;padding:15px;background:#ffffff04}.reward.locked{opacity:.65}.reward b{font-size:12px}.reward p{font-size:10px;color:var(--muted);margin:6px 0 12px}
+.insight{padding:13px;border:1px solid #9b8cff35;background:#9b8cff0b;border-radius:12px;margin-bottom:9px}.insight b{font-size:11px}.insight p{font-size:10px;color:#aeb6c9;line-height:1.6;margin:5px 0 0}.error-row{border-left:2px solid var(--orange);padding:10px 12px;background:#ffffff04;border-radius:0 9px 9px 0;margin-bottom:8px}.error-row.high{border-color:var(--red)}.error-row b{font-size:11px}.error-row p{font-size:10px;color:var(--muted);margin:4px 0}.error-row small{font-size:9px;color:#707b92}
+.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:11px}.toast{position:fixed;right:24px;bottom:24px;background:#20283a;border:1px solid #4b5670;padding:12px 17px;border-radius:11px;font-size:12px;box-shadow:var(--shadow);z-index:30;opacity:0;transform:translateY(12px);transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:none}
+.modal-backdrop{position:fixed;inset:0;background:#05070bc9;backdrop-filter:blur(8px);z-index:20;display:none;align-items:center;justify-content:center;padding:18px}.modal-backdrop.show{display:flex}.modal{width:min(520px,100%);max-height:90vh;overflow:auto;background:#141a29;border:1px solid #343d53;border-radius:18px;padding:22px;box-shadow:var(--shadow)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}.modal-head h3{font:600 18px 'Space Grotesk';margin:0}.close{border:0;background:#ffffff0c;color:#fff;border-radius:8px;padding:7px 10px}
+.mobile-menu{display:none}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.two-col,.habit-page-grid{grid-template-columns:1fr}.content{padding:24px}.topbar{padding:0 24px}}
+@media(max-width:720px){.sidebar{width:0;padding:0;overflow:hidden;transition:.25s}.sidebar.open{width:252px;padding:20px 16px}.main{margin-left:0;width:100%}.topbar{height:64px;padding:0 15px}.mobile-menu{display:inline-flex}.content{padding:20px 14px 40px}.page-head{align-items:flex-start;flex-direction:column}.stats{gap:9px}.card{padding:15px}.stat-value{font-size:23px}.goal-hero{grid-template-columns:1fr}.goal-ring{display:none}.three-col{grid-template-columns:1fr}.date-chip{display:none}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.table-wrap{overflow:auto}.table{min-width:520px}}
+</style>
 </head>
 <body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+ <div class="brand"><div class="brand-mark">✦</div><div><strong>StudyBuddy</strong><small>PERSONAL PERFORMANCE OS</small></div></div>
+ <div class="nav-label">WORKSPACE</div><nav class="nav">
+ <button class="active" data-page="dashboard"><span class="ico">◈</span> Overview</button>
+ <button data-page="habits"><span class="ico">◷</span> Habits & Focus</button>
+ <button data-page="ielts"><span class="ico">▥</span> IELTS Progress</button>
+ <button data-page="analytics"><span class="ico">⌁</span> Analytics</button>
+ <button data-page="errors"><span class="ico">⚑</span> Error Journal</button>
+ </nav>
+ <div class="nav-label">PERSONAL SYSTEM</div><nav class="nav">
+ <button data-page="goals"><span class="ico">♜</span> Goals & Rewards</button>
+ <button data-page="settings"><span class="ico">⚙</span> Settings</button>
+ </nav>
+ <div class="side-bottom"><div class="level-card"><div class="level-top"><span id="sideLevel">LEVEL 01 · STARTER</span><b id="sideXp">0 XP</b></div><div class="xp-track"><i id="sideXpBar" style="width:0%"></i></div><div class="side-note" id="sideXpNote">0 / 500 XP to next level</div></div></div>
+</aside>
+<main class="main">
+<header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="icon-btn mobile-menu" id="menuBtn">☰</button><div class="crumb">STUDYBUDDY <span style="color:#4b5368">/</span> <b id="crumb">Overview</b></div></div><div class="top-actions"><div class="date-chip" id="todayDate"></div><div class="avatar">J</div></div></header>
+<div class="content">
+<section class="page active" id="page-dashboard">
+ <div class="page-head"><div><div class="eyebrow">YOUR COMMAND CENTER</div><h1>Make today count.</h1><div class="sub">A clear view of your effort, consistency and progress.</div></div><button class="btn btn-primary" onclick="openHabitModal()">＋ Add habit</button></div>
+ <div class="card goal-hero"><div><div class="eyebrow">PRIMARY MISSION · <span id="goalDays">30 DAYS LEFT</span></div><div class="goal-name" id="heroGoalName">Reach your next English milestone</div><div class="goal-desc" id="heroGoalDesc">Small focused sessions. Measurable progress. No wasted days.</div><div class="goal-progress"><div class="section-top" style="margin-bottom:8px"><span class="section-meta">GOAL COMPLETION</span><b id="heroGoalText" style="font-size:11px">0%</b></div><div class="track"><i id="heroGoalBar" style="width:0%"></i></div></div></div><div class="goal-ring" id="heroRing"><span id="heroRingText">0%</span></div></div>
+ <div class="grid stats">
+  <div class="card stat" style="--glow:#9b8cff"><div class="stat-label">FOCUS TIME <span>◷</span></div><div class="stat-value" id="focusStat">0h 00m</div><div class="stat-foot">Total tracked today</div></div>
+  <div class="card stat" style="--glow:#62d6a3"><div class="stat-label">HABITS COMPLETED <span>✓</span></div><div class="stat-value" id="habitStat">0 / 0</div><div class="stat-foot" id="habitStatFoot">Build your daily rhythm</div></div>
+  <div class="card stat" style="--glow:#65d8e8"><div class="stat-label">IELTS OVERALL <span>✧</span></div><div class="stat-value cyan" id="overallStat">—</div><div class="stat-foot">Latest recorded performance</div></div>
+  <div class="card stat" style="--glow:#ffb86b"><div class="stat-label">CURRENT STREAK <span>♨</span></div><div class="stat-value orange" id="streakStat">0 days</div><div class="stat-foot">Days with at least one completed habit</div></div>
+ </div>
+ <div class="grid two-col">
+  <div class="card"><div class="section-top"><div><div class="section-title">Today's habits</div><div class="section-meta">Select a habit to open its focus room</div></div><button class="btn btn-ghost btn-sm" onclick="navigate('habits')">View all →</button></div><div class="habit-list" id="dashHabits"></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Activity pulse</div><div class="section-meta">Your latest actions</div></div><span class="pill green">LIVE</span></div><div class="activity" id="activityFeed"></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Progress trajectory</div><div class="section-meta">Daily focus minutes · last 7 days</div></div><span class="pill">7 DAYS</span></div><div class="chart-wrap"><canvas id="dashChart"></canvas></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Quick actions</div><div class="section-meta">Keep your momentum moving</div></div></div><div class="quick-grid">
+   <button class="quick" onclick="openHabitModal()"><span>＋</span><b>Create a habit</b><small>Build your routine</small></button>
+   <button class="quick" onclick="navigate('ielts')"><span>▥</span><b>Log IELTS result</b><small>Update your score</small></button>
+   <button class="quick" onclick="navigate('analytics')"><span>⌁</span><b>Review analytics</b><small>Find your patterns</small></button>
+   <button class="quick" onclick="navigate('errors')"><span>⚑</span><b>Review weak points</b><small>Turn errors into growth</small></button>
+  </div></div>
+ </div>
+</section>
 
-    <div class="sidebar">
-        <div class="logo-area">
-            <div class="logo-icon">⚡</div>
-            <div class="logo-text">StudyBuddy</div>
-        </div>
-        
-        <div class="nav-section">Asosiy</div>
-        <button class="nav-btn active" onclick="switchView(event, 'overview')">📊 Bosh sahifa (Overview)</button>
-        <button class="nav-btn" onclick="switchView(event, 'habits')">⏱️ Odatlar va Taymer</button>
-        <button class="nav-btn" onclick="switchView(event, 'analytics')">📈 IELTS Statistikasi</button>
-        <button class="nav-btn" onclick="switchView(event, 'tahlil')">📉 Tahlillar (Analytics)</button>
-        <button class="nav-btn" onclick="switchView(event, 'errors')">⚠️ Xatolar jurnali</button>
-        
-        <div class="nav-section" style="margin-top: 24px;">Tizim</div>
-        <button class="nav-btn" onclick="switchView(event, 'goals')">🏆 Maqsadlar va XP</button>
-        <button class="nav-btn" onclick="switchView(event, 'settings')">⚙️ Sozlamalar</button>
+<section class="page" id="page-habits">
+ <div class="page-head"><div><div class="eyebrow">CONSISTENCY ENGINE</div><h1>Habits & Focus</h1><div class="sub">Create your own habits, set a time budget and focus one session at a time.</div></div><button class="btn btn-primary" onclick="openHabitModal()">＋ Create habit</button></div>
+ <div class="grid stats">
+  <div class="card stat"><div class="stat-label">DAILY TARGET</div><div class="stat-value" id="dailyTarget">0h</div><div class="stat-foot">Planned focus time</div></div>
+  <div class="card stat"><div class="stat-label">TRACKED TODAY</div><div class="stat-value cyan" id="trackedToday">0m</div><div class="stat-foot">Timer sessions</div></div>
+  <div class="card stat"><div class="stat-label">COMPLETION RATE</div><div class="stat-value positive" id="completionRate">0%</div><div class="stat-foot">Habits completed today</div></div>
+  <div class="card stat"><div class="stat-label">TOTAL HABITS</div><div class="stat-value purple" id="totalHabits">0</div><div class="stat-foot">Your personal routine</div></div>
+ </div>
+ <div class="grid habit-page-grid">
+  <div class="card"><div class="section-top"><div><div class="section-title">My daily routine</div><div class="section-meta">Click any habit to enter its focus room</div></div><span class="pill" id="habitCountPill">0 HABITS</span></div><div class="habit-manage" id="habitManage"></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Focus room</div><div class="section-meta">Timer for the selected habit</div></div><span class="pill green" id="timerStatus">READY</span></div><div class="timer-task-title" id="timerHabitName">Choose a habit</div><div class="timer-sub" id="timerHabitMeta">Your focus session will appear here</div><div class="timer-circle" id="timerCircle"><div class="timer-face" id="timerDisplay">25:00</div></div><div class="timer-controls"><button class="btn btn-primary" id="timerStart" onclick="startTimer()">▶ Start</button><button class="btn btn-ghost" onclick="pauseTimer()">Ⅱ Pause</button><button class="btn btn-ghost" onclick="resetTimer()">↺ Reset</button></div><div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--line)"><div class="section-top"><span class="section-meta">SESSION NOTE</span><span class="section-meta" id="sessionPlanned">25 MIN PLANNED</span></div><div class="field"><textarea id="sessionNote" placeholder="What will you focus on in this session?"></textarea></div><button class="btn btn-ghost btn-sm" style="width:100%;margin-top:9px" onclick="saveSessionNote()">Save note</button></div></div>
+ </div>
+</section>
 
-        <div class="sidebar-footer">
-            <div class="user-level">
-                <span>Level 12 Scholar</span>
-                <span style="color: var(--accent-primary);">3,450 XP</span>
-            </div>
-            <div class="xp-bar"><div class="xp-fill"></div></div>
-        </div>
-    </div>
+<section class="page" id="page-ielts">
+ <div class="page-head"><div><div class="eyebrow">ENGLISH PROFICIENCY TRACKER</div><h1>IELTS Progress</h1><div class="sub">Enter your test results manually. Listening and Reading bands are calculated automatically.</div></div><button class="btn btn-primary" onclick="document.getElementById('ieltsForm').scrollIntoView({behavior:'smooth'})">＋ Add test result</button></div>
+ <div class="card" style="margin-bottom:16px"><div class="section-top"><div><div class="section-title">Your IELTS journey</div><div class="section-meta">Overall band trend from saved mock tests</div></div><span class="pill" id="testCount">0 TESTS</span></div><div class="chart-wrap" style="height:245px"><canvas id="ieltsChart"></canvas></div></div>
+ <div class="grid three-col" id="skillCards"></div>
+ <div class="grid two-col" style="margin-top:16px">
+  <div class="card"><div class="section-top"><div><div class="section-title">Record a mock test</div><div class="section-meta">Listening & Reading: raw score out of 40</div></div><span class="pill green">MANUAL ENTRY</span></div>
+   <form id="ieltsForm"><div class="form-grid">
+    <div class="field"><label>TEST DATE</label><input type="date" id="testDate" required></div><div class="field"><label>TEST LABEL</label><input id="testLabel" placeholder="e.g. Cambridge 19 · Test 2"></div>
+    <div class="field"><label>LISTENING CORRECT / 40</label><input type="number" id="listeningRaw" min="0" max="40" placeholder="e.g. 32"><div class="section-meta" id="listeningBandPreview">Estimated band: —</div></div>
+    <div class="field"><label>READING CORRECT / 40</label><input type="number" id="readingRaw" min="0" max="40" placeholder="e.g. 30"><div class="section-meta" id="readingBandPreview">Estimated band: —</div></div>
+    <div class="field"><label>WRITING BAND (0–9)</label><input type="number" id="writingBand" min="0" max="9" step=".5" placeholder="e.g. 6.5"></div>
+    <div class="field"><label>SPEAKING BAND (0–9)</label><input type="number" id="speakingBand" min="0" max="9" step=".5" placeholder="e.g. 7"></div>
+    <div class="field full"><label>NOTES / TEST OBSERVATION</label><textarea id="testNotes" placeholder="What went well? What should improve?"></textarea></div>
+   </div><div class="form-actions"><button class="btn btn-primary" type="submit">Save test result →</button></div></form>
+  </div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Score conversion guide</div><div class="section-meta">Approximate Academic IELTS raw-score conversion</div></div></div><div class="table-wrap"><table class="table"><thead><tr><th>Correct answers</th><th>Listening</th><th>Academic Reading</th></tr></thead><tbody id="conversionTable"></tbody></table></div><p class="section-meta" style="line-height:1.6;margin-top:13px">Band conversions are approximate and can vary slightly by test version. General Training Reading uses a different conversion scale. Overall band is rounded to the nearest half band.</p></div>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="section-top"><div><div class="section-title">Test history</div><div class="section-meta">All saved results, newest first</div></div></div><div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Test</th><th>Listening</th><th>Reading</th><th>Writing</th><th>Speaking</th><th>Overall</th><th></th></tr></thead><tbody id="testHistory"></tbody></table></div></div>
+</section>
 
-    <div class="main">
-        <div class="header">
-            <div class="search-trigger">
-                <span>🔍 Tezkor buyruqlar va qidiruv...</span>
-                <span class="kbd">⌘K</span>
-            </div>
-            <div class="user-profile">
-                <span style="color: var(--text-muted); font-size: 13px;">Javohir</span>
-                <div class="status-dot" title="Telegram Bot Ulangan"></div>
-                <span style="font-size: 12px; color: var(--text-dim);">Telegram Bot Active</span>
-            </div>
-        </div>
+<section class="page" id="page-analytics">
+ <div class="page-head"><div><div class="eyebrow">INTELLIGENCE & PATTERNS</div><h1>Analytics Lab</h1><div class="sub">Understand what is working, where momentum drops and what deserves attention next.</div></div><span class="pill green">AUTO-UPDATED</span></div>
+ <div class="grid stats">
+  <div class="card stat"><div class="stat-label">7-DAY FOCUS</div><div class="stat-value" id="weekFocus">0h</div><div class="stat-foot">Tracked minutes</div></div>
+  <div class="card stat"><div class="stat-label">AVERAGE DAILY FOCUS</div><div class="stat-value cyan" id="avgFocus">0m</div><div class="stat-foot">Last 7 days</div></div>
+  <div class="card stat"><div class="stat-label">BEST DAY</div><div class="stat-value positive" id="bestDay">—</div><div class="stat-foot">Most focused day</div></div>
+  <div class="card stat"><div class="stat-label">ROUTINE HEALTH</div><div class="stat-value purple" id="routineHealth">—</div><div class="stat-foot">Based on completion rate</div></div>
+ </div>
+ <div class="grid two-col">
+  <div class="card"><div class="section-top"><div><div class="section-title">Focus consistency</div><div class="section-meta">Minutes tracked per day</div></div><span class="pill">7 DAYS</span></div><div class="chart-wrap"><canvas id="analyticsChart"></canvas></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Skill balance</div><div class="section-meta">Latest IELTS bands</div></div></div><div id="skillBalance"></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">AI-style daily review</div><div class="section-meta">Generated from your saved activity</div></div><span class="pill green">AUTO</span></div><div id="autoInsights"></div></div>
+  <div class="card"><div class="section-top"><div><div class="section-title">Next best actions</div><div class="section-meta">Practical suggestions based on your data</div></div></div><div id="nextActions"></div></div>
+ </div>
+</section>
 
-        <div class="content">
-            
-            <!-- OVERVIEW -->
-            <div id="view-overview" class="view-panel active">
-                <div class="card kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-title">O'qish vaqti</span>
-                        <span style="font-size: 16px;">⏱️</span>
-                    </div>
-                    <div class="kpi-value">6.5h <span class="kpi-sub">/ 8.0h</span></div>
-                    <div class="progress-container">
-                        <div class="progress-bar"><div class="progress-fill" style="width: 81%;"></div></div>
-                    </div>
-                </div>
+<section class="page" id="page-errors">
+ <div class="page-head"><div><div class="eyebrow">LEARN · REFLECT · IMPROVE</div><h1>Error Journal</h1><div class="sub">Daily review entries are generated from your habits and IELTS results. Add your own learning mistakes too.</div></div><button class="btn btn-primary" onclick="openErrorModal()">＋ Add entry</button></div>
+ <div class="grid stats"><div class="card stat"><div class="stat-label">TOTAL INSIGHTS</div><div class="stat-value" id="errorTotal">0</div><div class="stat-foot">Automatic + manual</div></div><div class="card stat"><div class="stat-label">HIGH PRIORITY</div><div class="stat-value orange" id="errorHigh">0</div><div class="stat-foot">Needs attention</div></div><div class="card stat"><div class="stat-label">RESOLVED</div><div class="stat-value positive" id="errorResolved">0</div><div class="stat-foot">Marked as reviewed</div></div><div class="card stat"><div class="stat-label">LAST REVIEW</div><div class="stat-value purple" style="font-size:19px" id="lastReview">Not yet</div><div class="stat-foot">Automatic daily scan</div></div></div>
+ <div class="grid two-col"><div class="card"><div class="section-top"><div><div class="section-title">Daily performance review</div><div class="section-meta">Generated using your tracked data</div></div><button class="btn btn-ghost btn-sm" onclick="runDailyReview()">↻ Run review</button></div><div id="dailyReview"></div></div><div class="card"><div class="section-top"><div><div class="section-title">Journal entries</div><div class="section-meta">Your improvement backlog</div></div><select id="errorFilter" class="inline-input" style="width:auto" onchange="renderErrors()"><option value="all">All entries</option><option value="open">Open</option><option value="resolved">Resolved</option></select></div><div id="errorList"></div></div></div>
+</section>
 
-                <div class="card kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-title">Maqsad bajarilishi</span>
-                        <span style="font-size: 16px;">🎯</span>
-                    </div>
-                    <div class="kpi-value">81%</div>
-                    <div class="progress-container">
-                        <div class="progress-bar"><div class="progress-fill" style="width: 81%;"></div></div>
-                    </div>
-                </div>
+<section class="page" id="page-goals">
+ <div class="page-head"><div><div class="eyebrow">PURPOSE · PROGRESS · REWARDS</div><h1>Goals & Rewards</h1><div class="sub">Turn your long-term ambition into visible daily progress.</div></div><button class="btn btn-primary" onclick="openGoalModal()">＋ New goal</button></div>
+ <div class="grid two-col"><div class="card"><div class="section-top"><div><div class="section-title">Active goals</div><div class="section-meta">Your targets and deadlines</div></div></div><div id="goalList"></div></div><div class="card"><div class="section-top"><div><div class="section-title">XP & level system</div><div class="section-meta">Earn XP through consistent action</div></div><span class="pill purple">GAMIFIED</span></div><div style="display:flex;align-items:center;gap:17px;margin:20px 0"><div class="goal-ring" style="width:90px;height:90px"><span id="levelRing">1</span></div><div><div class="section-meta">CURRENT LEVEL</div><div class="goal-name" id="levelName">Starter</div><div class="section-meta" id="levelProgressText">0 / 500 XP</div></div></div><div class="track" style="height:9px"><i id="levelProgressBar" style="width:0%"></i></div><p class="section-meta" style="margin-top:15px;line-height:1.7">Complete a habit: +20 XP<br>Complete all daily habits: +30 bonus XP<br>Log an IELTS mock test: +25 XP<br>Finish a focus session: +10 XP per 25 minutes</p></div></div>
+ <div class="card" style="margin-top:16px"><div class="section-top"><div><div class="section-title">Reward vault</div><div class="section-meta">Set rewards that make your effort meaningful</div></div><button class="btn btn-ghost btn-sm" onclick="openRewardModal()">＋ Add reward</button></div><div class="grid three-col" id="rewardList"></div></div>
+</section>
 
-                <div class="card kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-title">Vazifalar</span>
-                        <span style="font-size: 16px;">📋</span>
-                    </div>
-                    <div class="kpi-value">7 <span class="kpi-sub">/ 9 ta</span></div>
-                    <div class="progress-container">
-                        <div class="progress-bar"><div class="progress-fill" style="width: 77%;"></div></div>
-                    </div>
-                </div>
-
-                <div class="card kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-title">Ketma-ket seriya</span>
-                        <span style="font-size: 16px;">🔥</span>
-                    </div>
-                    <div class="kpi-value" style="color: var(--warning);">14 <span class="kpi-sub" style="color: var(--warning);">kun</span></div>
-                    <div class="progress-container">
-                        <div class="progress-info"><span>Shaxsiy rekord</span><span>21 kun</span></div>
-                    </div>
-                </div>
-
-                <div class="card timer-section">
-                    <div class="section-header">
-                        <div class="section-title">Kunlik odatlar va taymer markazi</div>
-                        <span style="font-size: 12px; color: var(--text-dim);">Task ustiga bosing ➔</span>
-                    </div>
-                    
-                    <div class="habit-row" onclick="openTaskDetail('Vocabulary Drill', '60 daqiqa', 'Word definitions, context examples, and active SRS review.')">
-                        <div>
-                            <div class="habit-name">📖 Vocabulary Drill</div>
-                            <div class="habit-time">Reja: 60m • Amalda: 45m</div>
-                        </div>
-                        <button class="btn-action" onclick="event.stopPropagation(); openTaskDetail('Vocabulary Drill', '60 daqiqa', 'Word definitions, context examples, and active SRS review.')">Kirish</button>
-                    </div>
-
-                    <div class="habit-row" onclick="openTaskDetail('Listening Practice', '60 daqiqa', 'Podcast & Cambridge audio training drills.')">
-                        <div>
-                            <div class="habit-name">🎧 Listening Practice</div>
-                            <div class="habit-time">Reja: 60m • Amalda: 60m</div>
-                        </div>
-                        <div class="badge-done">✓ Bajarildi</div>
-                    </div>
-
-                    <div class="habit-row" onclick="openTaskDetail('Reading Comprehension', '120 daqiqa', 'ScienceDaily articles & Digital SAT passage analysis.')">
-                        <div>
-                            <div class="habit-name">📚 Reading Comprehension</div>
-                            <div class="habit-time">Reja: 120m • Amalda: 90m</div>
-                        </div>
-                        <button class="btn-action" style="background: #3B82F6;" onclick="event.stopPropagation(); openTaskDetail('Reading Comprehension', '120 daqiqa', 'ScienceDaily articles & Digital SAT passage analysis.')">Kirish</button>
-                    </div>
-                </div>
-
-                <div class="card analytics-card">
-                    <div>
-                        <div class="section-header" style="margin-bottom: 12px;">
-                            <div class="section-title">AI Tizim Tahlili</div>
-                        </div>
-                        <p class="insight-text">
-                            Eng yuqori produktivlik vaqti: <b>09:00 - 12:00</b> oralig'ida qayd etildi. Writing bo'yicha kechikishlar 12% ga qisqardi.
-                        </p>
-                    </div>
-                    <div class="highlight-box">
-                        <b>Tavsiya:</b> C1 darajasiga chiqish uchun bugun kechki payt Speaking bo'yicha xatolarni ko'rib chiqing.
-                    </div>
-                </div>
-            </div>
-
-            <!-- TASK DETAIL -->
-            <div id="view-task-detail" class="task-detail-container">
-                <button class="back-btn" onclick="closeTaskDetail()">← Orqaga qaytish</button>
-                
-                <div class="section-header">
-                    <div>
-                        <h2 id="detail-task-title" style="font-size: 22px; font-weight: 700; color: #FFF; margin-bottom: 4px;">Vocabulary Drill</h2>
-                        <p id="detail-task-desc" style="font-size: 13px; color: var(--text-muted);">Word definitions, context examples, and active SRS review.</p>
-                    </div>
-                    <span id="detail-task-time" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--border-active); padding: 6px 14px; border-radius: 8px; color: var(--accent-primary);">Rejalashtirilgan: 60 daqiqa</span>
-                </div>
-
-                <div class="timer-display-box">
-                    <div style="font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Live Precision Timer</div>
-                    <div id="live-timer" class="timer-digits">59:45</div>
-                    <div class="timer-controls">
-                        <button class="btn-timer-ctrl btn-start-t" onclick="startTimer()">▶ Boshlash</button>
-                        <button class="btn-timer-ctrl btn-pause-t" onclick="pauseTimer()">⏸ Pauza</button>
-                        <button class="btn-timer-ctrl btn-reset-t" onclick="resetTimer()">↺ Qayta boshlash</button>
-                    </div>
-                </div>
-
-                <div style="font-size: 14px; font-weight: 600; color: #FFF; margin-bottom: 12px;">Kerakli Asboblar va Resurslar</div>
-                <div class="tools-grid">
-                    <div class="tool-box">
-                        <div class="tool-title">📖 GoldenDict / Vocabulary</div>
-                        <div class="tool-desc">Offline Cambridge & Oxford dictionary databases for instant definition lookups.</div>
-                    </div>
-                    <div class="tool-box">
-                        <div class="tool-title">📝 Error Log Notes</div>
-                        <div class="tool-desc">Automatically log mistranslated words or tricky grammar points into your database.</div>
-                    </div>
-                    <div class="tool-box">
-                        <div class="tool-title">🤖 Telegram Bot Sync</div>
-                        <div class="tool-desc">Live session status synced directly with your telegram progress bot.</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HABITS -->
-            <div id="view-habits" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">Odatlar va Taymer Markazi</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">Barcha 10 ta asosiy odatlar va vaqt boshqaruvi shu yerda ishlaydi.</p>
-                </div>
-            </div>
-
-            <!-- IELTS STATS -->
-            <div id="view-analytics" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12;">
-                    <div class="section-header">
-                        <div class="section-title">📈 IELTS Band Konvertatsiyasi va Ko'rsatkichlari</div>
-                        <span style="font-size: 12px; color: var(--text-dim);">Target: Band 8.0+</span>
-                    </div>
-                    <div class="stats-grid" style="margin-top: 20px;">
-                        <div class="stat-box">
-                            <div class="stat-label"><span>🎧 Listening (To'g'ri javob: 34/40)</span><span style="color: var(--success);">Band 8.0</span></div>
-                            <div class="stat-value-big">30 / 35 <span style="font-size: 14px; color: var(--text-muted);">test natijasi</span></div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label"><span>📚 Reading Academic (To'g'ri javob: 33/40)</span><span style="color: var(--success);">Band 7.5</span></div>
-                            <div class="stat-value-big">30 / 35 <span style="font-size: 14px; color: var(--text-muted);">test natijasi</span></div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label"><span>✍️ Writing Task 1 & 2</span><span style="color: var(--warning);">Band 7.0</span></div>
-                            <div class="stat-value-big">Task Achievement: Strong</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label"><span>🗣️ Speaking Fluency & Coherence</span><span style="color: var(--success);">Band 7.5</span></div>
-                            <div class="stat-value-big">Lexical Resource: C1</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAHLIL -->
-            <div id="view-tahlil" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">📉 Tahlillar va Grafiklar</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">Kunlik, haftalik va oylik o'qish dinamikasi hamda AI tavsiyalari.</p>
-                </div>
-            </div>
-
-            <!-- ERRORS -->
-            <div id="view-errors" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">⚠️ Xatolar Jurnali (Error Log)</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">Kechikishlar va xatolar bazasi.</p>
-                </div>
-            </div>
-
-            <!-- GOALS -->
-            <div id="view-goals" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">🏆 Maqsadlar va Gamifikatsiya (XP & Level)</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">B2 dan C1 ga o'tish maqsadlari va yutuq nishonlari.</p>
-                </div>
-            </div>
-
-            <!-- SETTINGS -->
-            <div id="view-settings" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">⚙️ Tizim Sozlamalari</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">Google Sheets va Telegram Bot API ulanmalari.</p>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        function switchView(event, viewName) {
-            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            
-            event.currentTarget.classList.add('active');
-            
-            const target = document.getElementById('view-' + viewName);
-            if(target) {
-                target.classList.add('active');
-            }
-        }
-
-        function openTaskDetail(title, timeStr, desc) {
-            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-task-detail').classList.add('active');
-            
-            document.getElementById('detail-task-title').innerText = title;
-            document.getElementById('detail-task-desc').innerText = desc;
-            document.getElementById('detail-task-time').innerText = 'Rejalashtirilgan: ' + timeStr;
-        }
-
-        function closeTaskDetail() {
-            document.getElementById('view-task-detail').classList.remove('active');
-            document.getElementById('view-overview').classList.add('active');
-        }
-
-        let timerInterval;
-        let secondsLeft = 3585;
-
-        function updateTimerDisplay() {
-            let mins = Math.floor(secondsLeft / 60);
-            let secs = secondsLeft % 60;
-            document.getElementById('live-timer').innerText = 
-                (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-        }
-
-        function startTimer() {
-            if (timerInterval) return;
-            timerInterval = setInterval(() => {
-                if (secondsLeft > 0) {
-                    secondsLeft--;
-                    updateTimerDisplay();
-                }
-            }, 1000);
-        }
-
-        function pauseTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            secondsLeft = 3600;
-            updateTimerDisplay();
-        }
-    </script>
-</body>
-</html>
+<section class="page" id="page-settings">
+ <div class="page-head"><div><div class="eyebrow">YOUR SYSTEM · YOUR RULES</div><h1>Settings</h1><div class="sub">Personalize your workspace and manage your data.</div></div></div>
+ <div class="grid two-col">
+  <div class="card"><div class="section-title" style="margin-bottom:16px">Profile & preferences</div><form id="settingsForm"><div class="form-grid"><div class="field full"><label>YOUR DISPLAY NAME</label><input id="userName" placeholder="Your name"></div><div class="field full"><label>PRIMARY GOAL</label><input id="settingsGoal" placeholder="e.g. Achieve IELTS 7.5"></div><div class="field"><label>GOAL DEADLINE</label><input type="date" id="settingsDeadline"></div><div class="field"><label>DAILY FOCUS TARGET (MIN)</label><input type="number" id="focusTarget" min="1" max="1440"></div></div><div class="form-actions"><button class="btn btn-primary">Save preferences</button></div></form></div>
+  <div class="card"><div class="section-title" style="margin-bottom:8px">Data management</div><p class="section-meta" style="line-height:1.7">Your information is saved in this browser using local storage. Export a backup before clearing browser data or switching devices.</p><div style="display:grid;gap:9px;margin-top:17px"><button class="btn btn-ghost" onclick="exportData()">↓ Export all data (JSON)</button><label class="btn btn-ghost" style="text-align:center">↑ Import backup<input type="file" accept=".json,application/json" id="importFile" hidden></label><button class="btn btn-danger" onclick="resetData()">Reset all app data</button></div><div class="insight" style="margin-top:17px"><b>About automatic insights</b><p>Daily reviews are generated locally from your recorded habits, focus sessions and IELTS scores. They do not require an external AI service. Connect an AI API/backend later if you want true AI-generated analysis.</p></div></div>
+ </div>
+</section>
+</div></main></div>
+<div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Create</h3><button class="close" onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
+<script>
+const $=id=>document.getElementById(id), today=()=>new Date().toISOString().slice(0,10), fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}), uid=()=>Math.random().toString(36).slice(2,10);
+const defaults={
+ name:'Javohir',goal:'Reach IELTS 7.5+',goalDesc:'Build a consistent English learning system and reach your target score.',deadline:new Date(Date.now()+30*86400000).toISOString().slice(0,10),focusTarget:240,xp:0,
+ habits:[{id:'h1',name:'Vocabulary Building',icon:'📖',minutes:45,category:'English',note:'Learn, review and use new words.',done:false},{id:'h2',name:'Listening Practice',icon:'🎧',minutes:45,category:'IELTS',note:'Active listening and transcript review.',done:false},{id:'h3',name:'Reading Practice',icon:'📚',minutes:60,category:'IELTS',note:'Timed reading and question analysis.',done:false},{id:'h4',name:'Writing Practice',icon:'✍️',minutes:45,category:'IELTS',note:'Plan, write and review.',done:false},{id:'h5',name:'Speaking Practice',icon:'🎙️',minutes:30,category:'English',note:'Fluency, coherence and pronunciation.',done:false}],
+ tests:[],sessions:[],activity:[],errors:[],goals:[{id:'g1',name:'Achieve IELTS 7.5+',desc:'Reach the target overall band score.',progress:0,target:100,unit:'%',deadline:new Date(Date.now()+30*86400000).toISOString().slice(0,10),active:true}],rewards:[{id:'r1',name:'Movie night',cost:200,desc:'A guilt-free movie break.'},{id:'r2',name:'Favorite activity',cost:350,desc:'Spend time on something you enjoy.'},{id:'r3',name:'Special reward',cost:600,desc:'Celebrate a big milestone.'}],daily:{}};
+let data=load(),selectedHabit=null,timerSeconds=0,timerInterval=null,timerRunning=false,sessionStarted=null;
+function load(){try{return {...structuredClone(defaults),...JSON.parse(localStorage.getItem('studybuddy_v3')||'{}')}}catch(e){return structuredClone(defaults)}}
+function save(){localStorage.setItem('studybuddy_v3',JSON.stringify(data));}
+function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function logActivity(icon,title,detail){data.activity.unshift({id:uid(),icon,title,detail,date:today(),time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})});data.activity=data.activity.slice(0,30);save()}
+function navigate(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('page-'+page).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('crumb').textContent=({dashboard:'Overview',habits:'Habits & Focus',ielts:'IELTS Progress',analytics:'Analytics',errors:'Error Journal',goals:'Goals & Rewards',settings:'Settings'})[page];$('sidebar').classList.remove('open');renderAll();if(page==='dashboard'||page==='analytics'||page==='ielts')setTimeout(drawAllCharts,60)}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');
+$('todayDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+function level(){return Math.floor(data.xp/500)+1}function xpInto(){return data.xp%500}
+function addXP(n,reason){data.xp+=n;logActivity('✦',`+${n} XP`,reason);save();toast(`+${n} XP · ${reason}`);renderAll()}
+function todayHabits(){return data.habits.filter(h=>h.done)}
+function todaySessions(){return data.sessions.filter(s=>s.date===today())}
+function focusMinutes(date=today()){return data.sessions.filter(s=>s.date===date).reduce((a,s)=>a+s.minutes,0)}
+function bandFromRaw(n,type){if(n===''||n===null||n===undefined||!Number.isFinite(+n))return null;let x=+n;if(x<0||x>40)return null;let table=type==='L'?[[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[7,3.5],[5,3],[3,2.5],[0,2]]:[[39,9],[37,8.5],[35,8],[33,7.5],[30,7],[27,6.5],[23,6],[19,5.5],[15,5],[13,4.5],[10,4],[8,3.5],[6,3],[4,2.5],[0,2]];for(let [min,b] of table)if(x>=min)return b;return 2}
+function roundBand(n){return Math.round(n*2)/2}
+function latestTest(){return data.tests.slice().sort((a,b)=>b.date.localeCompare(a.date))[0]}
+function overall(t){let vals=[t.L,t.R,t.W,t.S].filter(v=>v!==null&&v!==undefined&&!isNaN(v));return vals.length===4?roundBand(vals.reduce((a,b)=>a+b,0)/4):null}
+function streak(){let n=0,d=new Date();for(let i=0;i<365;i++){let key=d.toISOString().slice(0,10);if(data.habits.some(h=>h.completions?.includes(key))||data.sessions.some(s=>s.date===key)){n++;d.setDate(d.getDate()-1)}else if(i===0){d.setDate(d.getDate()-1);continue}else break}return n}
+function renderAll(){renderDashboard();renderHabits();renderIELTS();renderAnalytics();renderErrors();renderGoals();renderSettings();renderXP()}
+function renderXP(){let l=level(),x=xpInto();$('sideLevel').textContent=`LEVEL ${String(l).padStart(2,'0')} · ${l===1?'STARTER':l<5?'BUILDER':l<10?'ACHIEVER':'ELITE'}`;$('sideXp').textContent=data.xp.toLocaleString()+' XP';$('sideXpBar').style.width=x/5+'%';$('sideXpNote').textContent=`${x} / 500 XP to next level`;$('levelRing').textContent=l;$('levelName').textContent=l===1?'Starter':l<5?'Builder':l<10?'Achiever':'Elite';$('levelProgressText').textContent=`${x} / 500 XP · ${500-x} XP to next level`;$('levelProgressBar').style.width=x/5+'%'}
+function renderDashboard(){let mins=focusMinutes(),done=todayHabits().length,total=data.habits.length,t=latestTest(),o=t?overall(t):null;$('focusStat').textContent=Math.floor(mins/60)+'h '+String(mins%60).padStart(2,'0')+'m';$('habitStat').textContent=`${done} / ${total}`;$('habitStatFoot').textContent=total?Math.round(done/total*100)+'% of your routine':'Create your first habit';$('overallStat').textContent=o===null?'—':o.toFixed(1);$('streakStat').textContent=streak()+' days';let active=data.goals.find(g=>g.active)||data.goals[0],p=active?Math.min(100,active.progress/Math.max(1,active.target)*100):0;$('heroGoalName').textContent=active?.name||data.goal;$('heroGoalDesc').textContent=active?.desc||data.goalDesc;$('heroGoalText').textContent=Math.round(p)+'%';$('heroGoalBar').style.width=p+'%';$('heroRingText').textContent=Math.round(p)+'%';$('heroRing').style.background=`conic-gradient(var(--purple) 0 ${p}%,#ffffff14 ${p}% 100%)`;let days=active?.deadline?Math.ceil((new Date(active.deadline+'T23:59:00')-new Date())/86400000):0;$('goalDays').textContent=days>=0?`${days} DAYS LEFT`:'DEADLINE PASSED';$('dashHabits').innerHTML=data.habits.length?data.habits.map(h=>`<div class="habit-item" onclick="selectHabit('${h.id}');navigate('habits')"><div class="habit-icon">${h.icon}</div><div class="habit-info"><b>${esc(h.name)}</b><small>${esc(h.category)} · ${h.minutes} min planned</small></div><span class="habit-time">${h.done?'DONE':h.minutes+'m'}</span><button class="check ${h.done?'done':''}" onclick="event.stopPropagation();toggleHabit('${h.id}')">✓</button></div>`).join(''):'<div class="empty">No habits yet. Create your first routine.</div>';$('activityFeed').innerHTML=data.activity.slice(0,5).map(a=>`<div class="activity-row"><div class="activity-icon">${a.icon}</div><div><b>${esc(a.title)}</b><small>${esc(a.detail)} · ${a.time||''}</small></div></div>`).join('')||'<div class="empty">Your activity will appear here.</div>';drawChart('dashChart',last7().map(x=>x.minutes),last7().map(x=>x.label),'#9b8cff')}
+function renderHabits(){let target=data.habits.reduce((a,h)=>a+h.minutes,0),tracked=focusMinutes(),done=todayHabits().length,total=data.habits.length;$('dailyTarget').textContent=(target/60).toFixed(1)+'h';$('trackedToday').textContent=tracked+'m';$('completionRate').textContent=(total?Math.round(done/total*100):0)+'%';$('totalHabits').textContent=total;$('habitCountPill').textContent=total+' HABITS';$('habitManage').innerHTML=data.habits.map(h=>`<div class="manage-row"><div class="habit-icon" onclick="selectHabit('${h.id}')">${h.icon}</div><div class="habit-info" onclick="selectHabit('${h.id}')" style="cursor:pointer"><b>${esc(h.name)}</b><small>${esc(h.category)} · ${h.minutes} min · ${esc(h.note||'No note')}</small></div><button class="check ${h.done?'done':''}" onclick="toggleHabit('${h.id}')">✓</button><button class="btn btn-ghost btn-sm" onclick="editHabit('${h.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="deleteHabit('${h.id}')">✕</button></div>`).join('')||'<div class="empty">Create a habit to start building your routine.</div>';if(selectedHabit&&!data.habits.some(h=>h.id===selectedHabit))selectedHabit=null;updateTimerPanel()}
+function selectHabit(id){selectedHabit=id;let h=data.habits.find(x=>x.id===id);if(!h)return;timerSeconds=h.minutes*60;pauseTimer();updateTimerPanel();renderHabits()}
+function updateTimerPanel(){let h=data.habits.find(x=>x.id===selectedHabit);$('timerHabitName').textContent=h?h.name:'Choose a habit';$('timerHabitMeta').textContent=h?`${h.category} · ${h.minutes} minute target`:'Select a habit from your routine';$('sessionPlanned').textContent=(h?h.minutes:25)+' MIN PLANNED';if(!timerRunning&&h&&timerSeconds===0)timerSeconds=h.minutes*60;updateTimerDisplay()}
+function updateTimerDisplay(){let m=Math.floor(timerSeconds/60),s=timerSeconds%60;$('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');let h=data.habits.find(x=>x.id===selectedHabit),total=(h?.minutes||25)*60,p=total?Math.max(0,Math.min(1,timerSeconds/total)):1;$('timerCircle').style.background=`conic-gradient(var(--purple) ${p*360}deg,#ffffff10 0deg)`;$('timerStatus').textContent=timerRunning?'FOCUSING':timerSeconds===0?'COMPLETE':'READY'}
+function startTimer(){if(!selectedHabit){toast('Choose a habit first');return}if(timerRunning)return;if(timerSeconds<=0)timerSeconds=data.habits.find(h=>h.id===selectedHabit).minutes*60;timerRunning=true;sessionStarted=Date.now();$('timerStatus').textContent='FOCUSING';timerInterval=setInterval(()=>{timerSeconds--;updateTimerDisplay();if(timerSeconds<=0){pauseTimer();completeSession(true)}},1000)}
+function pauseTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null}if(timerRunning){let elapsed=Math.max(0,Math.floor((Date.now()-sessionStarted)/60000));if(elapsed>=1)saveSession(elapsed,false)}timerRunning=false;updateTimerDisplay()}
+function resetTimer(){pauseTimer();let h=data.habits.find(x=>x.id===selectedHabit);timerSeconds=(h?.minutes||25)*60;updateTimerDisplay();toast('Timer reset')}
+function completeSession(finished){let h=data.habits.find(x=>x.id===selectedHabit);if(!h)return;let mins=h.minutes;saveSession(mins,true);timerSeconds=0;updateTimerDisplay();toast('Focus session completed!');}
+function saveSession(mins,complete){if(!selectedHabit)return;let h=data.habits.find(x=>x.id===selectedHabit);data.sessions.push({id:uid(),habitId:selectedHabit,habit:h?.name||'Focus session',minutes:mins,date:today(),note:$('sessionNote').value,complete});logActivity('◷',`${mins} min focus session`,h?.name||'Focus');data.xp+=Math.max(5,Math.floor(mins/25)*10);save();renderAll()}
+function saveSessionNote(){toast('Session note saved for the next session');}
+function toggleHabit(id){let h=data.habits.find(x=>x.id===id);if(!h)return;h.completions=h.completions||[];if(h.done){h.done=false;h.completions=h.completions.filter(d=>d!==today());toast('Habit marked incomplete')}else{h.done=true;h.completions.push(today());data.xp+=20;logActivity('✓',`${h.name} completed`,'Daily habit · +20 XP');if(data.habits.every(x=>x.done)){data.xp+=30;logActivity('✦','Daily routine completed','All habits done · +30 bonus XP');toast('All habits complete! +30 bonus XP')}else toast('Habit completed · +20 XP')}save();renderAll()}
+function openModal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalBackdrop').classList.add('show')}function closeModal(){$('modalBackdrop').classList.remove('show')}
+function openHabitModal(id){let h=data.habits.find(x=>x.id===id);openModal(h?'Edit habit':'Create a habit',`<form id="habitForm"><div class="form-grid"><div class="field full"><label>HABIT NAME</label><input id="hfName" required maxlength="50" value="${h?attr(h.name):''}" placeholder="e.g. Grammar practice"></div><div class="field"><label>ICON (EMOJI)</label><input id="hfIcon" value="${h?attr(h.icon):'✨'}" maxlength="4"></div><div class="field"><label>DAILY TIME (MINUTES)</label><input id="hfMinutes" type="number" min="1" max="600" required value="${h?h.minutes:30}"></div><div class="field"><label>CATEGORY</label><select id="hfCategory"><option ${h?.category==='English'?'selected':''}>English</option><option ${h?.category==='IELTS'?'selected':''}>IELTS</option><option ${h?.category==='Personal'?'selected':''}>Personal</option><option ${h?.category==='Study'?'selected':''}>Study</option><option ${h?.category==='Other'?'selected':''}>Other</option></select></div><div class="field"><label>SHORT NOTE</label><input id="hfNote" value="${h?attr(h.note||''):''}" placeholder="What does this habit involve?"></div></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary">${h?'Save changes':'Create habit'}</button></div></form>`);$('habitForm').onsubmit=e=>{e.preventDefault();let obj={id:h?.id||uid(),name:$('hfName').value.trim(),icon:$('hfIcon').value||'✦',minutes:+$('hfMinutes').value,category:$('hfCategory').value,note:$('hfNote').value,done:h?.done||false,completions:h?.completions||[]};if(h)Object.assign(h,obj);else data.habits.push(obj);save();closeModal();renderAll();toast(h?'Habit updated':'Habit created')}}
+function editHabit(id){openHabitModal(id)}function deleteHabit(id){if(!confirm('Delete this habit and keep its past focus sessions?'))return;data.habits=data.habits.filter(h=>h.id!==id);if(selectedHabit===id){selectedHabit=null;pauseTimer()}save();renderAll();toast('Habit deleted')}
+function renderIELTS(){let t=latestTest(),skills=[['Listening','🎧','L'],['Reading','📚','R'],['Writing','✍️','W'],['Speaking','🎙️','S']];$('skillCards').innerHTML=skills.map(([n,ic,k])=>{let v=t?t[k]:null;return `<div class="card"><div class="skill-card"><span class="skill-icon">${ic}</span><div class="skill-main"><b>${n}</b><small>${v==null?'No score yet':'Latest test result'}</small></div><div class="skill-band">${v==null?'—':Number(v).toFixed(1)}</div></div><div class="mini-track"><i style="width:${v==null?0:v/9*100}%"></i></div></div>`}).join('');$('testCount').textContent=data.tests.length+' TESTS';$('testHistory').innerHTML=data.tests.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.label||'Mock test')}</td><td>${x.rawL??'—'}/40 <span class="pill">${x.L??'—'}</span></td><td>${x.rawR??'—'}/40 <span class="pill">${x.R??'—'}</span></td><td>${x.W??'—'}</td><td>${x.S??'—'}</td><td><b>${overall(x)?.toFixed(1)||'—'}</b></td><td><button class="btn btn-ghost btn-sm" onclick="deleteTest('${x.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No test results yet. Record your first mock test above.</td></tr>';drawChart('ieltsChart',data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(overall),data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>fmtDate(x.date)),'#65d8e8',true)}
+function deleteTest(id){if(!confirm('Delete this test result?'))return;data.tests=data.tests.filter(t=>t.id!==id);save();renderAll()}
+['listeningRaw','readingRaw'].forEach(id=>$(id).addEventListener('input',()=>{let k=id==='listeningRaw'?'L':'R',v=bandFromRaw($(id).value,k);$(id==='listeningRaw'?'listeningBandPreview':'readingBandPreview').textContent='Estimated band: '+(v===null?'—':v.toFixed(1))}));
+$('ieltsForm').onsubmit=e=>{e.preventDefault();let l=$('listeningRaw').value,r=$('readingRaw').value,w=$('writingBand').value,s=$('speakingBand').value;if(l===''||r===''||w===''||s===''){toast('Enter all four skill scores');return}let vals=[+w,+s];if(vals.some(v=>v<0||v>9)){toast('Writing and Speaking bands must be 0–9');return}let test={id:uid(),date:$('testDate').value||today(),label:$('testLabel').value||'Mock test',rawL:+l,rawR:+r,L:bandFromRaw(l,'L'),R:bandFromRaw(r,'R'),W:+w,S:+s,notes:$('testNotes').value};data.tests.push(test);data.xp+=25;logActivity('▥','IELTS mock test saved',`Overall band ${overall(test)?.toFixed(1)} · +25 XP`);save();e.target.reset();$('testDate').value=today();toast('IELTS result saved · +25 XP');renderAll();});
+function renderConversion(){$('conversionTable').innerHTML=[[39,'9.0','9.0'],[37,'8.5','8.5'],[35,'8.0','8.0'],[32,'7.5','7.5'],[30,'7.0','7.0'],[26,'6.5','6.5'],[23,'6.0','6.0'],[18,'5.5','5.5'],[16,'5.0','5.0'],[13,'4.5','4.5']].map(r=>`<tr><td>${r[0]}–40</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
+function last7(){let a=[];for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let key=d.toISOString().slice(0,10);a.push({date:key,label:d.toLocaleDateString('en-US',{weekday:'short'}),minutes:focusMinutes(key)})}return a}
+function renderAnalytics(){let days=last7(),sum=days.reduce((a,x)=>a+x.minutes,0),best=days.reduce((a,b)=>a.minutes>b.minutes?a:b,days[0]);$('weekFocus').textContent=(sum/60).toFixed(1)+'h';$('avgFocus').textContent=Math.round(sum/7)+'m';$('bestDay').textContent=best.minutes?best.label:'—';let rate=data.habits.length?todayHabits().length/data.habits.length:0;$('routineHealth').textContent=data.habits.length?Math.round(rate*100)+'%':'—';drawChart('analyticsChart',days.map(x=>x.minutes),days.map(x=>x.label),'#9b8cff');let t=latestTest();$('skillBalance').innerHTML=t?[['Listening',t.L],['Reading',t.R],['Writing',t.W],['Speaking',t.S]].map(([n,v])=>`<div style="margin:17px 0"><div class="section-top" style="margin-bottom:7px"><span style="font-size:11px">${n}</span><b style="font:600 13px 'Space Grotesk';color:var(--purple)">${v.toFixed(1)}</b></div><div class="track"><i style="width:${v/9*100}%"></i></div></div>`).join(''):'<div class="empty">Add an IELTS test to see your skill balance.</div>';let insights=generateInsights();$('autoInsights').innerHTML=insights.map(i=>`<div class="insight"><b>${i.title}</b><p>${i.text}</p></div>`).join('');$('nextActions').innerHTML=insights.slice(0,3).map((i,n)=>`<div class="activity-row" style="margin:15px 0"><div class="activity-icon">${['①','②','③'][n]}</div><div><b>${i.action}</b><small>${i.text}</small></div></div>`).join('')}
+function generateInsights(){let out=[],done=todayHabits().length,total=data.habits.length,mins=focusMinutes(),t=latestTest();if(total&&done<total)out.push({title:'Routine completion opportunity',text:`You have completed ${done} of ${total} habits today. ${total-done} habit(s) remain. A short session can help you close the gap.`,action:'Complete one remaining habit'});if(total&&done===total)out.push({title:'Excellent consistency',text:'Every habit in your daily routine is marked complete. Protect this rhythm and keep the next day realistic.',action:'Prepare tomorrow’s routine'});if(mins<(data.focusTarget||240))out.push({title:'Focus target not reached yet',text:`You have tracked ${mins} minutes against your ${data.focusTarget}-minute daily target. Consider one focused block.`,action:'Schedule a focused study block'});else out.push({title:'Focus target achieved',text:`You have reached your daily focus target of ${data.focusTarget} minutes. Review what helped you stay focused.`,action:'Record what worked today'});if(t){let arr=[['Listening',t.L],['Reading',t.R],['Writing',t.W],['Speaking',t.S]].sort((a,b)=>a[1]-b[1]);out.push({title:`Skill to prioritize: ${arr[0][0]}`,text:`Your latest ${arr[0][0]} score is ${arr[0][1].toFixed(1)}. Give this skill extra attention in your next study cycle.`,action:`Plan a ${arr[0][0]} practice session`})}else out.push({title:'Start measuring IELTS progress',text:'No IELTS mock test has been saved yet. Record a baseline to identify your strongest and weakest skills.',action:'Record your first IELTS mock test'});let week=last7().reduce((a,x)=>a+x.minutes,0);if(week===0)out.push({title:'Build your first data streak',text:'No focus sessions are recorded in the last seven days. Use the habit timer to start building a progress history.',action:'Start a 25-minute focus session'});return out}
+function renderErrors(){let open=data.errors.filter(e=>!e.resolved);$('errorTotal').textContent=data.errors.length;$('errorHigh').textContent=open.filter(e=>e.priority==='High').length;$('errorResolved').textContent=data.errors.filter(e=>e.resolved).length;$('lastReview').textContent=data.daily.lastReview?fmtDate(data.daily.lastReview):'Not yet';let ins=generateInsights();$('dailyReview').innerHTML=`<div class="insight"><b>Today's snapshot · ${fmtDate(today())}</b><p>${focusMinutes()} focus minutes logged, ${todayHabits().length}/${data.habits.length} habits completed and ${latestTest()?'IELTS results available':'no recent IELTS result'}.</p></div>`+ins.map(i=>`<div class="insight"><b>${i.title}</b><p>${i.text}</p></div>`).join('');let filter=$('errorFilter')?.value||'all',list=data.errors.filter(e=>filter==='all'||(filter==='resolved'?e.resolved:!e.resolved));$('errorList').innerHTML=list.slice().reverse().map(e=>`<div class="error-row ${e.priority==='High'?'high':''}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(e.title)}</b><span class="pill ${e.resolved?'green':e.priority==='High'?'red':'amber'}">${e.resolved?'RESOLVED':e.priority.toUpperCase()}</span></div><p>${esc(e.detail)}</p><small>${fmtDate(e.date)} · ${e.source==='auto'?'AUTO REVIEW':'MANUAL ENTRY'}</small><div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="toggleError('${e.id}')">${e.resolved?'Reopen':'Mark reviewed'}</button><button class="btn btn-ghost btn-sm" onclick="deleteError('${e.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No entries here. Your daily review will create insights from your activity.</div>'}
+function runDailyReview(){let ins=generateInsights();data.errors=data.errors.filter(e=>!(e.source==='auto'&&e.date===today()));ins.forEach(i=>data.errors.push({id:uid(),title:i.title,detail:i.text,priority:i.title.includes('not reached')||i.title.includes('prioritize')?'High':'Medium',date:today(),source:'auto',resolved:false}));data.daily.lastReview=today();save();renderErrors();toast('Daily review generated from your saved data')}
+function openErrorModal(){openModal('Add journal entry',`<form id="errorForm"><div class="form-grid"><div class="field full"><label>WHAT SHOULD YOU IMPROVE?</label><input id="efTitle" required placeholder="e.g. Confusing present perfect and past simple"></div><div class="field"><label>PRIORITY</label><select id="efPriority"><option>Medium</option><option>High</option><option>Low</option></select></div><div class="field full"><label>DETAIL / CORRECTION</label><textarea id="efDetail" required placeholder="Describe the mistake and the correct approach..."></textarea></div></div><div class="form-actions"><button class="btn btn-primary">Save entry</button></div></form>`);$('errorForm').onsubmit=e=>{e.preventDefault();data.errors.push({id:uid(),title:$('efTitle').value,detail:$('efDetail').value,priority:$('efPriority').value,date:today(),source:'manual',resolved:false});save();closeModal();renderErrors();toast('Journal entry saved')}}
+function toggleError(id){let e=data.errors.find(x=>x.id===id);if(e)e.resolved=!e.resolved;save();renderErrors()}function deleteError(id){data.errors=data.errors.filter(x=>x.id!==id);save();renderErrors()}
+function renderGoals(){let list=data.goals;$('goalList').innerHTML=list.map(g=>{let p=Math.min(100,g.progress/Math.max(1,g.target)*100);return `<div class="goal-row"><div><b>${esc(g.name)}</b><small>${esc(g.desc||'')} · Deadline ${g.deadline?fmtDate(g.deadline):'Not set'}</small><div class="track" style="margin-top:10px"><i style="width:${p}%"></i></div><small>${g.progress} / ${g.target} ${esc(g.unit||'')} · ${Math.round(p)}%</small></div><div style="display:grid;gap:6px"><button class="btn btn-ghost btn-sm" onclick="updateGoal('${g.id}')">Update</button><button class="btn btn-ghost btn-sm" onclick="deleteGoal('${g.id}')">✕</button></div></div>`}).join('')||'<div class="empty">Add your first goal.</div>';$('rewardList').innerHTML=data.rewards.map(r=>{let unlocked=data.xp>=r.cost;return `<div class="reward ${unlocked?'':'locked'}"><div style="font-size:21px;margin-bottom:9px">${unlocked?'🎁':'🔒'}</div><b>${esc(r.name)}</b><p>${esc(r.desc||'A reward for your effort.')}</p><div class="section-top"><span class="pill ${unlocked?'green':''}">${r.cost} XP</span><button class="btn btn-ghost btn-sm" onclick="deleteReward('${r.id}')">✕</button></div>${unlocked?'<span class="section-meta">UNLOCKED</span>':'<span class="section-meta">'+Math.max(0,r.cost-data.xp)+' XP TO UNLOCK</span>'}</div>`}).join('')||'<div class="empty">Add a reward to your vault.</div>'}
+function openGoalModal(){openModal('Create a goal',`<form id="goalForm"><div class="form-grid"><div class="field full"><label>GOAL TITLE</label><input id="gfName" required placeholder="e.g. IELTS overall band 7.5"></div><div class="field full"><label>DESCRIPTION</label><input id="gfDesc" placeholder="Why does this goal matter?"></div><div class="field"><label>TARGET VALUE</label><input id="gfTarget" type="number" min="1" value="100"></div><div class="field"><label>UNIT</label><input id="gfUnit" value="%" placeholder="%, band, books..."></div><div class="field full"><label>DEADLINE</label><input id="gfDate" type="date"></div></div><div class="form-actions"><button class="btn btn-primary">Create goal</button></div></form>`);$('goalForm').onsubmit=e=>{e.preventDefault();data.goals.push({id:uid(),name:$('gfName').value,desc:$('gfDesc').value,target:+$('gfTarget').value,progress:0,unit:$('gfUnit').value,deadline:$('gfDate').value,active:true});save();closeModal();renderGoals();renderDashboard();toast('Goal created')}}
+function updateGoal(id){let g=data.goals.find(x=>x.id===id);openModal('Update goal progress',`<form id="progressForm"><div class="field"><label>${esc(g.name)} · Current ${g.progress}/${g.target}</label><input id="gpValue" type="number" min="0" value="${g.progress}"></div><div class="form-actions"><button class="btn btn-primary">Save progress</button></div></form>`);$('progressForm').onsubmit=e=>{e.preventDefault();g.progress=Math.min(g.target,+$('gpValue').value);save();closeModal();renderGoals();renderDashboard();toast('Goal progress updated')}}
+function deleteGoal(id){if(!confirm('Delete this goal?'))return;data.goals=data.goals.filter(g=>g.id!==id);save();renderGoals();renderDashboard()}
+function openRewardModal(){openModal('Add a reward',`<form id="rewardForm"><div class="form-grid"><div class="field full"><label>REWARD NAME</label><input id="rfName" required placeholder="e.g. New book"></div><div class="field"><label>XP COST</label><input id="rfCost" type="number" min="1" value="250"></div><div class="field"><label>DESCRIPTION</label><input id="rfDesc" placeholder="What will you enjoy?"></div></div><div class="form-actions"><button class="btn btn-primary">Add reward</button></div></form>`);$('rewardForm').onsubmit=e=>{e.preventDefault();data.rewards.push({id:uid(),name:$('rfName').value,cost:+$('rfCost').value,desc:$('rfDesc').value});save();closeModal();renderGoals();toast('Reward added')}}
+function deleteReward(id){data.rewards=data.rewards.filter(r=>r.id!==id);save();renderGoals()}
+function renderSettings(){$('userName').value=data.name;$('settingsGoal').value=data.goal;$('settingsDeadline').value=data.deadline;$('focusTarget').value=data.focusTarget}
+$('settingsForm').onsubmit=e=>{e.preventDefault();data.name=$('userName').value;data.goal=$('settingsGoal').value;data.deadline=$('settingsDeadline').value;data.focusTarget=+$('focusTarget').value||240;save();renderAll();toast('Preferences saved')}
+function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='studybuddy-backup-'+today()+'.json';a.click();URL.revokeObjectURL(url);toast('Backup exported')}
+$('importFile').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!d.habits||!d.tests)throw Error();data={...structuredClone(defaults),...d};save();renderAll();toast('Backup imported successfully')}catch(err){toast('Invalid backup file')}};r.readAsText(f)}
+function resetData(){if(!confirm('This permanently clears your StudyBuddy data in this browser. Export a backup first if needed. Continue?'))return;data=structuredClone(defaults);save();selectedHabit=null;pauseTimer();renderAll();toast('App data reset')}
+function drawAllCharts(){drawChart('dashChart',last7().map(x=>x.minutes),last7().map(x=>x.label),'#9b8cff');drawChart('analyticsChart',last7().map(x=>x.minutes),last7().map(x=>x.label),'#9b8cff');let tests=data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date));drawChart('ieltsChart',tests.map(overall),tests.map(x=>fmtDate(x.date)),'#65d8e8',true)}
+function drawChart(id,values,labels,color='#9b8cff',scaleNine=false){let c=$(id);if(!c||!c.offsetWidth)return;let rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;let ctx=c.getContext('2d');ctx.scale(dpr,dpr);let w=rect.width,h=rect.height,pad={l:35,r:12,t:15,b:27},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;ctx.clearRect(0,0,w,h);let nums=values.map(v=>v==null?null:+v),max=scaleNine?9:Math.max(60,...nums.filter(v=>v!==null))*1.15;ctx.font='10px DM Sans';ctx.fillStyle='#737e95';ctx.strokeStyle='#ffffff12';ctx.lineWidth=1;for(let i=0;i<=4;i++){let y=pad.t+ch*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(String(Math.round(max*(1-i/4))),3,y+3)}let pts=nums.map((v,i)=>v===null?null:{x:pad.l+(nums.length<=1?cw/2:i*cw/(nums.length-1)),y:pad.t+ch*(1-v/max)});let valid=pts.filter(Boolean);if(valid.length>1){ctx.beginPath();let started=false;pts.forEach(p=>{if(!p){started=false;return}if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y)});ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();let first=valid[0],last=valid[valid.length-1];ctx.lineTo(last.x,pad.t+ch);ctx.lineTo(first.x,pad.t+ch);ctx.closePath();let grad=ctx.createLinearGradient(0,pad.t,0,h);grad.addColorStop(0,color+'44');grad.addColorStop(1,color+'00');ctx.fillStyle=grad;ctx.fill()}pts.forEach((p,i)=>{if(!p)return;ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#151a29';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#7f899f';ctx.textAlign='center';ctx.fillText(labels[i]||'',p.x,h-7)})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function attr(s){return esc(s).replace(/`/g,'')}
+window.addEventListener('resize',()=>drawAllCharts());
+$('testDate').value=today();renderConversion();renderAll();setTimeout(drawAllCharts,100);
+</script>
+</body></html>'''
+path = Path("/mnt/data/StudyBuddy_Pro.html")
+path.write_text(html, encoding="utf-8")
+print(f"Created {path} ({path.stat().st_size:,} bytes)")
