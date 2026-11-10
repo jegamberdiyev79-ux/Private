@@ -1,9 +1,7 @@
-from pathlib import Path
-
-html = r'''<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="uz">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>StudyBuddy — Personal Performance OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,7 +33,11 @@ html = r'''<!DOCTYPE html>
 .mobile-menu{display:none}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.two-col,.habit-page-grid{grid-template-columns:1fr}.content{padding:24px}.topbar{padding:0 24px}}
 @media(max-width:720px){.sidebar{width:0;padding:0;overflow:hidden;transition:.25s}.sidebar.open{width:252px;padding:20px 16px}.main{margin-left:0;width:100%}.topbar{height:64px;padding:0 15px}.mobile-menu{display:inline-flex}.content{padding:20px 14px 40px}.page-head{align-items:flex-start;flex-direction:column}.stats{gap:9px}.card{padding:15px}.stat-value{font-size:23px}.goal-hero{grid-template-columns:1fr}.goal-ring{display:none}.three-col{grid-template-columns:1fr}.date-chip{display:none}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.table-wrap{overflow:auto}.table{min-width:520px}}
+
+html{min-height:100%;-webkit-text-size-adjust:100%;}body{padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:contain}button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.sidebar{padding-top:max(25px,env(safe-area-inset-top))}
+@media(max-width:720px){.sidebar.open{box-shadow:18px 0 45px #0009}.main{padding-bottom:env(safe-area-inset-bottom)}.content{padding-bottom:calc(40px + env(safe-area-inset-bottom))}}
 </style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 <div class="app">
@@ -158,8 +160,11 @@ const defaults={
  habits:[{id:'h1',name:'Vocabulary Building',icon:'📖',minutes:45,category:'English',note:'Learn, review and use new words.',done:false},{id:'h2',name:'Listening Practice',icon:'🎧',minutes:45,category:'IELTS',note:'Active listening and transcript review.',done:false},{id:'h3',name:'Reading Practice',icon:'📚',minutes:60,category:'IELTS',note:'Timed reading and question analysis.',done:false},{id:'h4',name:'Writing Practice',icon:'✍️',minutes:45,category:'IELTS',note:'Plan, write and review.',done:false},{id:'h5',name:'Speaking Practice',icon:'🎙️',minutes:30,category:'English',note:'Fluency, coherence and pronunciation.',done:false}],
  tests:[],sessions:[],activity:[],errors:[],goals:[{id:'g1',name:'Achieve IELTS 7.5+',desc:'Reach the target overall band score.',progress:0,target:100,unit:'%',deadline:new Date(Date.now()+30*86400000).toISOString().slice(0,10),active:true}],rewards:[{id:'r1',name:'Movie night',cost:200,desc:'A guilt-free movie break.'},{id:'r2',name:'Favorite activity',cost:350,desc:'Spend time on something you enjoy.'},{id:'r3',name:'Special reward',cost:600,desc:'Celebrate a big milestone.'}],daily:{}};
 let data=load(),selectedHabit=null,timerSeconds=0,timerInterval=null,timerRunning=false,sessionStarted=null;
-function load(){try{return {...structuredClone(defaults),...JSON.parse(localStorage.getItem('studybuddy_v3')||'{}')}}catch(e){return structuredClone(defaults)}}
-function save(){localStorage.setItem('studybuddy_v3',JSON.stringify(data));}
+function cloneData(value){return window.structuredClone?window.structuredClone(value):JSON.parse(JSON.stringify(value))}
+function safeStorageGet(key){try{return window.localStorage.getItem(key)}catch(e){return window.__studyBuddyMemory?.[key]??null}}
+function safeStorageSet(key,value){try{window.localStorage.setItem(key,value)}catch(e){window.__studyBuddyMemory=window.__studyBuddyMemory||{};window.__studyBuddyMemory[key]=value}}
+function load(){try{return {...cloneData(defaults),...JSON.parse(safeStorageGet('studybuddy_v3')||'{}')}}catch(e){return cloneData(defaults)}}
+function save(){safeStorageSet('studybuddy_v3',JSON.stringify(data));}
 function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 function logActivity(icon,title,detail){data.activity.unshift({id:uid(),icon,title,detail,date:today(),time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})});data.activity=data.activity.slice(0,30);save()}
 function navigate(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('page-'+page).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('crumb').textContent=({dashboard:'Overview',habits:'Habits & Focus',ielts:'IELTS Progress',analytics:'Analytics',errors:'Error Journal',goals:'Goals & Rewards',settings:'Settings'})[page];$('sidebar').classList.remove('open');renderAll();if(page==='dashboard'||page==='analytics'||page==='ielts')setTimeout(drawAllCharts,60)}
@@ -195,7 +200,7 @@ function editHabit(id){openHabitModal(id)}function deleteHabit(id){if(!confirm('
 function renderIELTS(){let t=latestTest(),skills=[['Listening','🎧','L'],['Reading','📚','R'],['Writing','✍️','W'],['Speaking','🎙️','S']];$('skillCards').innerHTML=skills.map(([n,ic,k])=>{let v=t?t[k]:null;return `<div class="card"><div class="skill-card"><span class="skill-icon">${ic}</span><div class="skill-main"><b>${n}</b><small>${v==null?'No score yet':'Latest test result'}</small></div><div class="skill-band">${v==null?'—':Number(v).toFixed(1)}</div></div><div class="mini-track"><i style="width:${v==null?0:v/9*100}%"></i></div></div>`}).join('');$('testCount').textContent=data.tests.length+' TESTS';$('testHistory').innerHTML=data.tests.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.label||'Mock test')}</td><td>${x.rawL??'—'}/40 <span class="pill">${x.L??'—'}</span></td><td>${x.rawR??'—'}/40 <span class="pill">${x.R??'—'}</span></td><td>${x.W??'—'}</td><td>${x.S??'—'}</td><td><b>${overall(x)?.toFixed(1)||'—'}</b></td><td><button class="btn btn-ghost btn-sm" onclick="deleteTest('${x.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No test results yet. Record your first mock test above.</td></tr>';drawChart('ieltsChart',data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(overall),data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>fmtDate(x.date)),'#65d8e8',true)}
 function deleteTest(id){if(!confirm('Delete this test result?'))return;data.tests=data.tests.filter(t=>t.id!==id);save();renderAll()}
 ['listeningRaw','readingRaw'].forEach(id=>$(id).addEventListener('input',()=>{let k=id==='listeningRaw'?'L':'R',v=bandFromRaw($(id).value,k);$(id==='listeningRaw'?'listeningBandPreview':'readingBandPreview').textContent='Estimated band: '+(v===null?'—':v.toFixed(1))}));
-$('ieltsForm').onsubmit=e=>{e.preventDefault();let l=$('listeningRaw').value,r=$('readingRaw').value,w=$('writingBand').value,s=$('speakingBand').value;if(l===''||r===''||w===''||s===''){toast('Enter all four skill scores');return}let vals=[+w,+s];if(vals.some(v=>v<0||v>9)){toast('Writing and Speaking bands must be 0–9');return}let test={id:uid(),date:$('testDate').value||today(),label:$('testLabel').value||'Mock test',rawL:+l,rawR:+r,L:bandFromRaw(l,'L'),R:bandFromRaw(r,'R'),W:+w,S:+s,notes:$('testNotes').value};data.tests.push(test);data.xp+=25;logActivity('▥','IELTS mock test saved',`Overall band ${overall(test)?.toFixed(1)} · +25 XP`);save();e.target.reset();$('testDate').value=today();toast('IELTS result saved · +25 XP');renderAll();});
+$('ieltsForm').onsubmit=e=>{e.preventDefault();let l=$('listeningRaw').value,r=$('readingRaw').value,w=$('writingBand').value,s=$('speakingBand').value;if(l===''||r===''||w===''||s===''){toast('Enter all four skill scores');return}let vals=[+w,+s];if(vals.some(v=>v<0||v>9)){toast('Writing and Speaking bands must be 0–9');return}let test={id:uid(),date:$('testDate').value||today(),label:$('testLabel').value||'Mock test',rawL:+l,rawR:+r,L:bandFromRaw(l,'L'),R:bandFromRaw(r,'R'),W:+w,S:+s,notes:$('testNotes').value};data.tests.push(test);data.xp+=25;logActivity('▥','IELTS mock test saved',`Overall band ${overall(test)?.toFixed(1)} · +25 XP`);save();e.target.reset();$('testDate').value=today();toast('IELTS result saved · +25 XP');renderAll()};
 function renderConversion(){$('conversionTable').innerHTML=[[39,'9.0','9.0'],[37,'8.5','8.5'],[35,'8.0','8.0'],[32,'7.5','7.5'],[30,'7.0','7.0'],[26,'6.5','6.5'],[23,'6.0','6.0'],[18,'5.5','5.5'],[16,'5.0','5.0'],[13,'4.5','4.5']].map(r=>`<tr><td>${r[0]}–40</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
 function last7(){let a=[];for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let key=d.toISOString().slice(0,10);a.push({date:key,label:d.toLocaleDateString('en-US',{weekday:'short'}),minutes:focusMinutes(key)})}return a}
 function renderAnalytics(){let days=last7(),sum=days.reduce((a,x)=>a+x.minutes,0),best=days.reduce((a,b)=>a.minutes>b.minutes?a:b,days[0]);$('weekFocus').textContent=(sum/60).toFixed(1)+'h';$('avgFocus').textContent=Math.round(sum/7)+'m';$('bestDay').textContent=best.minutes?best.label:'—';let rate=data.habits.length?todayHabits().length/data.habits.length:0;$('routineHealth').textContent=data.habits.length?Math.round(rate*100)+'%':'—';drawChart('analyticsChart',days.map(x=>x.minutes),days.map(x=>x.label),'#9b8cff');let t=latestTest();$('skillBalance').innerHTML=t?[['Listening',t.L],['Reading',t.R],['Writing',t.W],['Speaking',t.S]].map(([n,v])=>`<div style="margin:17px 0"><div class="section-top" style="margin-bottom:7px"><span style="font-size:11px">${n}</span><b style="font:600 13px 'Space Grotesk';color:var(--purple)">${v.toFixed(1)}</b></div><div class="track"><i style="width:${v/9*100}%"></i></div></div>`).join(''):'<div class="empty">Add an IELTS test to see your skill balance.</div>';let insights=generateInsights();$('autoInsights').innerHTML=insights.map(i=>`<div class="insight"><b>${i.title}</b><p>${i.text}</p></div>`).join('');$('nextActions').innerHTML=insights.slice(0,3).map((i,n)=>`<div class="activity-row" style="margin:15px 0"><div class="activity-icon">${['①','②','③'][n]}</div><div><b>${i.action}</b><small>${i.text}</small></div></div>`).join('')}
@@ -213,15 +218,40 @@ function deleteReward(id){data.rewards=data.rewards.filter(r=>r.id!==id);save();
 function renderSettings(){$('userName').value=data.name;$('settingsGoal').value=data.goal;$('settingsDeadline').value=data.deadline;$('focusTarget').value=data.focusTarget}
 $('settingsForm').onsubmit=e=>{e.preventDefault();data.name=$('userName').value;data.goal=$('settingsGoal').value;data.deadline=$('settingsDeadline').value;data.focusTarget=+$('focusTarget').value||240;save();renderAll();toast('Preferences saved')}
 function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='studybuddy-backup-'+today()+'.json';a.click();URL.revokeObjectURL(url);toast('Backup exported')}
-$('importFile').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!d.habits||!d.tests)throw Error();data={...structuredClone(defaults),...d};save();renderAll();toast('Backup imported successfully')}catch(err){toast('Invalid backup file')}};r.readAsText(f)}
-function resetData(){if(!confirm('This permanently clears your StudyBuddy data in this browser. Export a backup first if needed. Continue?'))return;data=structuredClone(defaults);save();selectedHabit=null;pauseTimer();renderAll();toast('App data reset')}
+$('importFile').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!d.habits||!d.tests)throw Error();data={...cloneData(defaults),...d};save();renderAll();toast('Backup imported successfully')}catch(err){toast('Invalid backup file')}};r.readAsText(f)}
+function resetData(){if(!confirm('This permanently clears your StudyBuddy data in this browser. Export a backup first if needed. Continue?'))return;data=cloneData(defaults);save();selectedHabit=null;pauseTimer();renderAll();toast('App data reset')}
 function drawAllCharts(){drawChart('dashChart',last7().map(x=>x.minutes),last7().map(x=>x.label),'#9b8cff');drawChart('analyticsChart',last7().map(x=>x.minutes),last7().map(x=>x.label),'#9b8cff');let tests=data.tests.slice().sort((a,b)=>a.date.localeCompare(b.date));drawChart('ieltsChart',tests.map(overall),tests.map(x=>fmtDate(x.date)),'#65d8e8',true)}
 function drawChart(id,values,labels,color='#9b8cff',scaleNine=false){let c=$(id);if(!c||!c.offsetWidth)return;let rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;let ctx=c.getContext('2d');ctx.scale(dpr,dpr);let w=rect.width,h=rect.height,pad={l:35,r:12,t:15,b:27},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;ctx.clearRect(0,0,w,h);let nums=values.map(v=>v==null?null:+v),max=scaleNine?9:Math.max(60,...nums.filter(v=>v!==null))*1.15;ctx.font='10px DM Sans';ctx.fillStyle='#737e95';ctx.strokeStyle='#ffffff12';ctx.lineWidth=1;for(let i=0;i<=4;i++){let y=pad.t+ch*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(String(Math.round(max*(1-i/4))),3,y+3)}let pts=nums.map((v,i)=>v===null?null:{x:pad.l+(nums.length<=1?cw/2:i*cw/(nums.length-1)),y:pad.t+ch*(1-v/max)});let valid=pts.filter(Boolean);if(valid.length>1){ctx.beginPath();let started=false;pts.forEach(p=>{if(!p){started=false;return}if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y)});ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();let first=valid[0],last=valid[valid.length-1];ctx.lineTo(last.x,pad.t+ch);ctx.lineTo(first.x,pad.t+ch);ctx.closePath();let grad=ctx.createLinearGradient(0,pad.t,0,h);grad.addColorStop(0,color+'44');grad.addColorStop(1,color+'00');ctx.fillStyle=grad;ctx.fill()}pts.forEach((p,i)=>{if(!p)return;ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#151a29';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#7f899f';ctx.textAlign='center';ctx.fillText(labels[i]||'',p.x,h-7)})}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function attr(s){return esc(s).replace(/`/g,'')}
 window.addEventListener('resize',()=>drawAllCharts());
 $('testDate').value=today();renderConversion();renderAll();setTimeout(drawAllCharts,100);
+
+// Telegram Mini App integration. The app remains usable in a normal browser too.
+(function initTelegramMiniApp(){
+  try {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg) return;
+    tg.ready();
+    tg.expand();
+    if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+    if (tg.setHeaderColor) tg.setHeaderColor('#090b12');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#090b12');
+    if (tg.BackButton) {
+      const syncBackButton = () => {
+        const current = document.querySelector('.page.active');
+        const isHome = !current || current.id === 'page-dashboard';
+        if (isHome) tg.BackButton.hide(); else tg.BackButton.show();
+      };
+      tg.BackButton.onClick(() => navigate('dashboard'));
+      document.querySelectorAll('.nav button').forEach(btn => btn.addEventListener('click', () => setTimeout(syncBackButton, 0)));
+      syncBackButton();
+    }
+    // Avoid accidental app closing while a modal is open.
+    if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+  } catch (err) {
+    console.warn('Telegram WebApp initialization skipped:', err);
+  }
+})();
+
 </script>
-</body></html>'''
-path = Path("/mnt/data/StudyBuddy_Pro.html")
-path.write_text(html, encoding="utf-8")
-print(f"Created {path} ({path.stat().st_size:,} bytes)")
+</body></html>
