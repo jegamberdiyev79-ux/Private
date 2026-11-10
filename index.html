@@ -134,6 +134,12 @@
         .tool-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 18px; }
         .tool-title { font-size: 13px; font-weight: 600; color: #FFF; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .tool-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+        /* IELTS Stats Custom Styling */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; grid-column: span 12; }
+        .stat-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; }
+        .stat-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .stat-value-big { font-size: 24px; font-weight: 700; color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; }
     </style>
 </head>
 <body>
@@ -310,7 +316,7 @@
                 </div>
             </div>
 
-            <!-- OTHER VIEWS -->
+            <!-- HABITS -->
             <div id="view-habits" class="view-panel" style="grid-column: span 12;">
                 <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
                     <h2 style="color: #FFF; margin-bottom: 10px;">Odatlar va Taymer Markazi</h2>
@@ -318,13 +324,35 @@
                 </div>
             </div>
 
+            <!-- IELTS STATS -->
             <div id="view-analytics" class="view-panel" style="grid-column: span 12;">
-                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
-                    <h2 style="color: #FFF; margin-bottom: 10px;">📈 IELTS Statistikasi</h2>
-                    <p style="color: var(--text-muted); font-size: 14px;">Listening, Reading, Writing va Speaking bo'yicha Band ballari statistikasi.</p>
+                <div class="card" style="grid-column: span 12;">
+                    <div class="section-header">
+                        <div class="section-title">📈 IELTS Band Konvertatsiyasi va Ko'rsatkichlari</div>
+                        <span style="font-size: 12px; color: var(--text-dim);">Target: Band 8.0+</span>
+                    </div>
+                    <div class="stats-grid" style="margin-top: 20px;">
+                        <div class="stat-box">
+                            <div class="stat-label"><span>🎧 Listening (To'g'ri javob: 34/40)</span><span style="color: var(--success);">Band 8.0</span></div>
+                            <div class="stat-value-big">30 / 35 <span style="font-size: 14px; color: var(--text-muted);">test natijasi</span></div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label"><span>📚 Reading Academic (To'g'ri javob: 33/40)</span><span style="color: var(--success);">Band 7.5</span></div>
+                            <div class="stat-value-big">30 / 35 <span style="font-size: 14px; color: var(--text-muted);">test natijasi</span></div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label"><span>✍️ Writing Task 1 & 2</span><span style="color: var(--warning);">Band 7.0</span></div>
+                            <div class="stat-value-big">Task Achievement: Strong</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label"><span>🗣️ Speaking Fluency & Coherence</span><span style="color: var(--success);">Band 7.5</span></div>
+                            <div class="stat-value-big">Lexical Resource: C1</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            <!-- TAHLIL -->
             <div id="view-tahlil" class="view-panel" style="grid-column: span 12;">
                 <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
                     <h2 style="color: #FFF; margin-bottom: 10px;">📉 Tahlillar va Grafiklar</h2>
@@ -332,6 +360,7 @@
                 </div>
             </div>
 
+            <!-- ERRORS -->
             <div id="view-errors" class="view-panel" style="grid-column: span 12;">
                 <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
                     <h2 style="color: #FFF; margin-bottom: 10px;">⚠️ Xatolar Jurnali (Error Log)</h2>
@@ -339,6 +368,7 @@
                 </div>
             </div>
 
+            <!-- GOALS -->
             <div id="view-goals" class="view-panel" style="grid-column: span 12;">
                 <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
                     <h2 style="color: #FFF; margin-bottom: 10px;">🏆 Maqsadlar va Gamifikatsiya (XP & Level)</h2>
@@ -346,6 +376,7 @@
                 </div>
             </div>
 
+            <!-- SETTINGS -->
             <div id="view-settings" class="view-panel" style="grid-column: span 12;">
                 <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
                     <h2 style="color: #FFF; margin-bottom: 10px;">⚙️ Tizim Sozlamalari</h2>
