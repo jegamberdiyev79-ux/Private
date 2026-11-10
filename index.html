@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy — Pro SaaS Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0B0E14;
+            --bg-surface: #121824;
+            --bg-surface-hover: #182030;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(139, 92, 246, 0.4);
+            --accent-primary: #8B5CF6;
+            --accent-glow: rgba(139, 92, 246, 0.15);
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --text-dim: #64748B;
+            --success: #22C55E;
+            --warning: #F59E0B;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; padding: 24px 16px; z-index: 10; }
+        .logo-area { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 32px; }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #8B5CF6, #6D28D9); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--accent-glow); }
+        .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: #FFF; }
+        
+        .nav-section { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; padding: 0 12px; margin-bottom: 8px; }
+        
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 11px 14px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-btn:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.04);
+            transform: translateX(2px);
+        }
+        .nav-btn.active {
+            background: var(--accent-glow);
+            color: var(--accent-primary);
+            border-color: var(--border-active);
+            font-weight: 600;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+        }
+
+        .sidebar-footer { margin-top: auto; background: rgba(255, 255, 255, 0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle); }
+        .user-level { font-size: 13px; font-weight: 600; color: #FFF; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .xp-bar { background: rgba(255, 255, 255, 0.05); height: 6px; border-radius: 3px; overflow: hidden; }
+        .xp-fill { background: var(--accent-primary); height: 100%; width: 78%; border-radius: 3px; }
+
+        .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.03), transparent 40%); }
+        
+        .header { height: 70px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: rgba(11, 14, 20, 0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 5; }
+        .search-trigger { background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 8px 16px; border-radius: 8px; width: 340px; color: var(--text-dim); font-size: 13px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.2s; }
+        .search-trigger:hover { border-color: var(--border-active); color: var(--text-muted); }
+        .kbd { background: rgba(255, 255, 255, 0.06); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+        .user-profile { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+
+        .content { padding: 32px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px; transition: 0.2s; position: relative; overflow: hidden; }
+        .card:hover { border-color: rgba(255, 255, 255, 0.12); }
+
+        .view-panel { display: none; width: 100%; grid-column: span 12; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+        .view-panel.active { display: grid; }
+
+        .kpi-card { grid-column: span 3; }
+        .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .kpi-title { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+        .kpi-value { font-size: 28px; font-weight: 700; color: #FFF; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
+        .kpi-sub { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+        
+        .progress-container { margin-top: 14px; }
+        .progress-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--text-muted); }
+        .progress-bar { background: rgba(255, 255, 255, 0.05); height: 6px; border-radius: 3px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #8B5CF6, #A78BFA); height: 100%; border-radius: 3px; }
+
+        .timer-section { grid-column: span 8; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-size: 15px; font-weight: 600; color: #FFF; letter-spacing: -0.2px; }
+        
+        .habit-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
+        .habit-row:hover { background: var(--bg-surface-hover); border-color: var(--border-active); transform: translateY(-1px); }
+        .habit-name { font-size: 14px; font-weight: 600; color: #FFF; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .habit-time { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+        
+        .btn-action { background: var(--accent-primary); color: #FFF; border: none; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+        .btn-action:hover { background: #7C3AED; transform: translateY(-1px); }
+        .badge-done { color: var(--success); font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.1); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.2); }
+
+        .analytics-card { grid-column: span 4; display: flex; flex-direction: column; justify-content: space-between; }
+        .insight-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .highlight-box { background: rgba(139, 92, 246, 0.05); padding: 14px; border-radius: 10px; border: 1px solid var(--border-active); font-size: 12px; line-height: 1.5; color: #E2E8F0; }
+        .highlight-box b { color: var(--accent-primary); }
+
+        .task-detail-container { grid-column: span 12; display: none; background: var(--bg-surface); border: 1px solid var(--border-active); border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); }
+        .task-detail-container.active { display: block; }
+        
+        .back-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px; transition: 0.2s; }
+        .back-btn:hover { background: var(--bg-surface-hover); color: #FFF; border-color: var(--border-active); }
+
+        .timer-display-box { background: rgba(11, 14, 20, 0.6); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 32px; text-align: center; margin-bottom: 24px; position: relative; overflow: hidden; }
+        .timer-digits { font-size: 56px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #FFF; letter-spacing: -2px; margin: 16px 0; text-shadow: 0 0 30px var(--accent-glow); }
+        
+        .timer-controls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+        .btn-timer-ctrl { padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-start-t { background: var(--success); color: #000; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3); }
+        .btn-pause-t { background: var(--warning); color: #000; }
+        .btn-reset-t { background: rgba(255, 255, 255, 0.08); color: #FFF; border: 1px solid var(--border-subtle); }
+        .btn-timer-ctrl:hover { transform: translateY(-1px); opacity: 0.9; }
+
+        .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+        .tool-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 18px; }
+        .tool-title { font-size: 13px; font-weight: 600; color: #FFF; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .tool-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">StudyBuddy</div>
+        </div>
+        
+        <div class="nav-section">Asosiy</div>
+        <button class="nav-btn active" onclick="switchView('overview')">📊 Bosh sahifa (Overview)</button>
+        <button class="nav-btn" onclick="switchView('habits')">⏱️ Odatlar va Taymer</button>
+        <button class="nav-btn" onclick="switchView('analytics')">📈 IELTS Statistikasi</button>
+        <button class="nav-btn" onclick="switchView('tahlil')">📉 Tahlillar (Analytics)</button>
+        <button class="nav-btn" onclick="switchView('errors')">⚠️ Xatolar jurnali</button>
+        
+        <div class="nav-section" style="margin-top: 24px;">Tizim</div>
+        <button class="nav-btn" onclick="switchView('goals')">🏆 Maqsadlar va XP</button>
+        <button class="nav-btn" onclick="switchView('settings')">⚙️ Sozlamalar</button>
+
+        <div class="sidebar-footer">
+            <div class="user-level">
+                <span>Level 12 Scholar</span>
+                <span style="color: var(--accent-primary);">3,450 XP</span>
+            </div>
+            <div class="xp-bar"><div class="xp-fill"></div></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div class="search-trigger">
+                <span>🔍 Tezkor buyruqlar va qidiruv...</span>
+                <span class="kbd">⌘K</span>
+            </div>
+            <div class="user-profile">
+                <span style="color: var(--text-muted); font-size: 13px;">Javohir</span>
+                <div class="status-dot" title="Telegram Bot Ulangan"></div>
+                <span style="font-size: 12px; color: var(--text-dim);">Telegram Bot Active</span>
+            </div>
+        </div>
+
+        <div class="content">
+            
+            <div id="view-overview" class="view-panel active">
+                <div class="card kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">O'qish vaqti</span>
+                        <span style="font-size: 16px;">⏱️</span>
+                    </div>
+                    <div class="kpi-value">6.5h <span class="kpi-sub">/ 8.0h</span></div>
+                    <div class="progress-container">
+                        <div class="progress-bar"><div class="progress-fill" style="width: 81%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="card kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Maqsad bajarilishi</span>
+                        <span style="font-size: 16px;">🎯</span>
+                    </div>
+                    <div class="kpi-value">81%</div>
+                    <div class="progress-container">
+                        <div class="progress-bar"><div class="progress-fill" style="width: 81%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="card kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Vazifalar</span>
+                        <span style="font-size: 16px;">📋</span>
+                    </div>
+                    <div class="kpi-value">7 <span class="kpi-sub">/ 9 ta</span></div>
+                    <div class="progress-container">
+                        <div class="progress-bar"><div class="progress-fill" style="width: 77%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="card kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Ketma-ket seriya</span>
+                        <span style="font-size: 16px;">🔥</span>
+                    </div>
+                    <div class="kpi-value" style="color: var(--warning);">14 <span class="kpi-sub" style="color: var(--warning);">kun</span></div>
+                    <div class="progress-container">
+                        <div class="progress-info"><span>Shaxsiy rekord</span><span>21 kun</span></div>
+                    </div>
+                </div>
+
+                <div class="card timer-section">
+                    <div class="section-header">
+                        <div class="section-title">Kunlik odatlar va taymer markazi</div>
+                        <span style="font-size: 12px; color: var(--text-dim);">Task ustiga bosing ➔</span>
+                    </div>
+                    
+                    <div class="habit-row" onclick="openTaskDetail('Vocabulary Drill', '60 daqiqa', 'Word definitions, context examples, and active SRS review.')">
+                        <div>
+                            <div class="habit-name">📖 Vocabulary Drill</div>
+                            <div class="habit-time">Reja: 60m • Amalda: 45m</div>
+                        </div>
+                        <button class="btn-action" onclick="event.stopPropagation(); openTaskDetail('Vocabulary Drill', '60 daqiqa', 'Word definitions, context examples, and active SRS review.')">Kirish</button>
+                    </div>
+
+                    <div class="habit-row" onclick="openTaskDetail('Listening Practice', '60 daqiqa', 'Podcast & Cambridge audio training drills.')">
+                        <div>
+                            <div class="habit-name">🎧 Listening Practice</div>
+                            <div class="habit-time">Reja: 60m • Amalda: 60m</div>
+                        </div>
+                        <div class="badge-done">✓ Bajarildi</div>
+                    </div>
+
+                    <div class="habit-row" onclick="openTaskDetail('Reading Comprehension', '120 daqiqa', 'ScienceDaily articles & Digital SAT passage analysis.')">
+                        <div>
+                            <div class="habit-name">📚 Reading Comprehension</div>
+                            <div class="habit-time">Reja: 120m • Amalda: 90m</div>
+                        </div>
+                        <button class="btn-action" style="background: #3B82F6;" onclick="event.stopPropagation(); openTaskDetail('Reading Comprehension', '120 daqiqa', 'ScienceDaily articles & Digital SAT passage analysis.')">Kirish</button>
+                    </div>
+                </div>
+
+                <div class="card analytics-card">
+                    <div>
+                        <div class="section-header" style="margin-bottom: 12px;">
+                            <div class="section-title">AI Tizim Tahlili</div>
+                        </div>
+                        <p class="insight-text">
+                            Eng yuqori produktivlik vaqti: <b>09:00 - 12:00</b> oralig'ida qayd etildi. Writing bo'yicha kechikishlar 12% ga qisqardi.
+                        </p>
+                    </div>
+                    <div class="highlight-box">
+                        <b>Tavsiya:</b> C1 darajasiga chiqish uchun bugun kechki payt Speaking bo'yicha xatolarni ko'rib chiqing.
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-task-detail" class="task-detail-container">
+                <button class="back-btn" onclick="closeTaskDetail()">← Orqaga qaytish</button>
+                
+                <div class="section-header">
+                    <div>
+                        <h2 id="detail-task-title" style="font-size: 22px; font-weight: 700; color: #FFF; margin-bottom: 4px;">Vocabulary Drill</h2>
+                        <p id="detail-task-desc" style="font-size: 13px; color: var(--text-muted);">Word definitions, context examples, and active SRS review.</p>
+                    </div>
+                    <span id="detail-task-time" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--border-active); padding: 6px 14px; border-radius: 8px; color: var(--accent-primary);">Rejalashtirilgan: 60 daqiqa</span>
+                </div>
+
+                <div class="timer-display-box">
+                    <div style="font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Live Precision Timer</div>
+                    <div id="live-timer" class="timer-digits">59:45</div>
+                    <div class="timer-controls">
+                        <button class="btn-timer-ctrl btn-start-t" onclick="startTimer()">▶ Boshlash</button>
+                        <button class="btn-timer-ctrl btn-pause-t" onclick="pauseTimer()">⏸ Pauza</button>
+                        <button class="btn-timer-ctrl btn-reset-t" onclick="resetTimer()">↺ Qayta boshlash</button>
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; font-weight: 600; color: #FFF; margin-bottom: 12px;">Kerakli Asboblar va Resurslar</div>
+                <div class="tools-grid">
+                    <div class="tool-box">
+                        <div class="tool-title">📖 GoldenDict / Vocabulary</div>
+                        <div class="tool-desc">Offline Cambridge & Oxford dictionary databases for instant definition lookups.</div>
+                    </div>
+                    <div class="tool-box">
+                        <div class="tool-title">📝 Error Log Notes</div>
+                        <div class="tool-desc">Automatically log mistranslated words or tricky grammar points into your database.</div>
+                    </div>
+                    <div class="tool-box">
+                        <div class="tool-title">🤖 Telegram Bot Sync</div>
+                        <div class="tool-desc">Live session status synced directly with your telegram progress bot.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-habits" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">Odatlar va Taymer Markazi</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Barcha 10 ta asosiy odatlar va vaqt boshqaruvi shu yerda joylashgan.</p>
+                </div>
+            </div>
+
+            <div id="view-analytics" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">IELTS Statistikasi</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Listening, Reading, Writing va Speaking bo'yicha Band ballari konversiyasi.</p>
+                </div>
+            </div>
+
+            <div id="view-tahlil" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">Tahlillar va Grafiklar</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Kunlik, haftalik va oylik o'qish dinamikasi hamda AI tavsiyalari.</p>
+                </div>
+            </div>
+
+            <div id="view-errors" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">Xatolar Jurnali (Error Log)</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Kechikishlar va xatolar bazasi.</p>
+                </div>
+            </div>
+
+            <div id="view-goals" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">Maqsadlar va Gamifikatsiya (XP & Level)</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">B2 dan C1 ga o'tish maqsadlari va yutuq nishonlari.</p>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view-panel" style="grid-column: span 12;">
+                <div class="card" style="grid-column: span 12; padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; margin-bottom: 10px;">Tizim Sozlamalari</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Google Sheets va Telegram Bot API ulanmalari.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function switchView(viewName) {
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            
+            if(viewName === 'overview') {
+                document.getElementById('view-overview').classList.add('active');
+            } else {
+                document.getElementById('view-' + viewName).classList.add('active');
+            }
+        }
+
+        function openTaskDetail(title, timeStr, desc) {
+            document.getElementById('view-overview').classList.remove('active');
+            document.getElementById('view-task-detail').classList.add('active');
+            
+            document.getElementById('detail-task-title').innerText = title;
+            document.getElementById('detail-task-desc').innerText = desc;
+            document.getElementById('detail-task-time').innerText = 'Rejalashtirilgan: ' + timeStr;
+        }
+
+        function closeTaskDetail() {
+            document.getElementById('view-task-detail').classList.remove('active');
+            document.getElementById('view-overview').classList.add('active');
+        }
+
+        let timerInterval;
+        let secondsLeft = 3585;
+
+        function updateTimerDisplay() {
+            let mins = Math.floor(secondsLeft / 60);
+            let secs = secondsLeft % 60;
+            document.getElementById('live-timer').innerText = 
+                (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (secondsLeft > 0) {
+                    secondsLeft--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            secondsLeft = 3600;
+            updateTimerDisplay();
+        }
+    </script>
+</body>
+</html>
